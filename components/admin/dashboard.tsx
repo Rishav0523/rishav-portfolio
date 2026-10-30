@@ -213,6 +213,18 @@ function ResumePanel({
   setNotice: (notice: Notice | null) => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const [media, setMedia] = useState<"checking" | "enabled" | "disabled">("checking");
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const result = await api<{ error?: string }>("/api/admin/media");
+        setMedia(result.status === 200 ? "enabled" : "disabled");
+      } catch {
+        setMedia("disabled");
+      }
+    })();
+  }, []);
 
   async function handleUpload(file: File | undefined) {
     if (!file || busy) return;
@@ -249,8 +261,8 @@ function ResumePanel({
       <div className="mb-5">
         <h2 className="display text-2xl">Resume PDF</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          The public pages only link the PDF when it is approved. Uploads live in R2 and require the
-          media binding to be enabled.
+          The public pages only link the PDF when it is approved. Replacing the file needs R2 media
+          storage; without it the PDF is swapped in the repository.
         </p>
       </div>
 
@@ -287,26 +299,46 @@ function ResumePanel({
         </label>
 
         <div className="border-t border-[var(--line)] pt-4">
-          <label className="form-label" htmlFor="resume-upload">
-            Replace the PDF (R2)
-          </label>
-          <input
-            id="resume-upload"
-            type="file"
-            accept="application/pdf"
-            className="mt-2 block w-full text-sm text-[var(--muted)] file:mr-3 file:rounded-full file:border-0 file:bg-[var(--cerulean)] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white"
-            onChange={(event) => {
-              void handleUpload(event.target.files?.[0]);
-              event.target.value = "";
-            }}
-            disabled={busy}
-          />
-          <p className="form-hint mt-2">PDF only, up to 5 MB. The static PDF in the build is unaffected.</p>
-          {busy ? (
-            <p className="form-hint mt-2 inline-flex items-center gap-2">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-              Uploading…
-            </p>
+          {media === "enabled" ? (
+            <>
+              <label className="form-label" htmlFor="resume-upload">
+                Replace the PDF (R2)
+              </label>
+              <input
+                id="resume-upload"
+                type="file"
+                accept="application/pdf"
+                className="mt-2 block w-full text-sm text-[var(--muted)] file:mr-3 file:rounded-full file:border-0 file:bg-[var(--cerulean)] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white"
+                onChange={(event) => {
+                  void handleUpload(event.target.files?.[0]);
+                  event.target.value = "";
+                }}
+                disabled={busy}
+              />
+              <p className="form-hint mt-2">
+                PDF only, up to 5 MB. The static PDF in the build is unaffected.
+              </p>
+              {busy ? (
+                <p className="form-hint mt-2 inline-flex items-center gap-2">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                  Uploading…
+                </p>
+              ) : null}
+            </>
+          ) : null}
+
+          {media === "disabled" ? (
+            <div className="text-sm leading-relaxed text-[var(--muted)]">
+              <p className="font-semibold text-[var(--ink)]">No R2 bucket on this account</p>
+              <p className="mt-2">
+                Uploads are off, so replace the file in the repository instead: put the new PDF at{" "}
+                <code className="rounded bg-[color-mix(in_srgb,var(--surface)_70%,transparent)] px-1 py-0.5 text-xs">
+                  public/resume/rishav-prasad-resume.pdf
+                </code>{" "}
+                and push. The deploy rebuilds the site with it, and the public link above keeps
+                working because the path does not change.
+              </p>
+            </div>
           ) : null}
         </div>
       </div>
