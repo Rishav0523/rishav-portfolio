@@ -427,12 +427,19 @@
 
   .print-hide,
   .skip-link,
+  .eyebrow,
   .bg-grid {
     display: none !important;
   }
 
   .hero-glow::before {
     display: none !important;
+  }
+
+  .animate-rise {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
 
   .container-page {
@@ -472,12 +479,8 @@
     margin-bottom: 0.5rem !important;
   }
 
-  .resume-break {
-    break-before: page;
-  }
-
   .resume-hero h1 {
-    font-size: 2rem !important;
+    font-size: 1.8rem !important;
   }
 
   .resume-body {
@@ -485,36 +488,48 @@
   }
 
   .resume-row {
-    display: grid !important;
-    grid-template-columns: 8.5rem 1fr !important;
-    gap: 1.25rem !important;
-    padding-block: 0.4rem !important;
+    display: block !important;
+    padding-block: 0.3rem !important;
+    break-inside: auto;
+  }
+
+  .resume-row > h2 {
+    margin-top: 0.45rem;
+    margin-bottom: 0.28rem;
+    break-after: avoid;
+  }
+
+  .resume-row li {
+    break-inside: avoid;
+  }
+
+  .resume-row .space-y-5 > div {
     break-inside: avoid;
   }
 
   .resume-row h2 {
-    font-size: 0.6rem !important;
+    font-size: 0.58rem !important;
   }
 
   .resume-row h3 {
-    font-size: 0.84rem !important;
+    font-size: 0.82rem !important;
   }
 
   .resume-row p,
   .resume-row li {
-    font-size: 0.76rem !important;
-    line-height: 1.5 !important;
+    font-size: 0.72rem !important;
+    line-height: 1.42 !important;
   }
 
   .resume-row .space-y-5 > * + * {
-    margin-top: 0.55rem !important;
-  }
-
-  .resume-row .space-y-4 > * + * {
     margin-top: 0.45rem !important;
   }
 
+  .resume-row .space-y-4 > * + * {
+    margin-top: 0.4rem !important;
+  }
+
   .resume-row .space-y-3 > * + * {
-    margin-top: 0.35rem !important;
+    margin-top: 0.3rem !important;
   }
 }

@@ -7,7 +7,7 @@ import { projects } from "@/lib/content";
 export const metadata: Metadata = {
   title: "Projects",
   description:
-    "Software and web projects by Rishav Prasad, each listed with its real status — including the Online Examination and Proctoring System, currently in development.",
+    "Software and web projects by Rishav Prasad — completed builds, plus the Online Examination and Proctoring System currently in development.",
   alternates: { canonical: "/projects/" },
   openGraph: { url: "/projects/" },
 };
@@ -62,7 +62,9 @@ export default function ProjectsPage() {
                         className={`h-1.5 w-1.5 rounded-full ${
                           project.status === "In development"
                             ? "bg-[var(--coral)]"
-                            : "bg-[var(--teal)]"
+                            : project.status === "Completed"
+                              ? "bg-[var(--cerulean)]"
+                              : "bg-[var(--teal)]"
                         }`}
                         aria-hidden
                       />

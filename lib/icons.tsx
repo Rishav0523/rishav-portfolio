@@ -3,7 +3,9 @@ import {
   Code2,
   Database,
   Globe2,
+  Lightbulb,
   Megaphone,
+  Newspaper,
   Rocket,
   ShieldCheck,
   Terminal,
@@ -18,6 +20,8 @@ export const icons = {
   rocket: Rocket,
   terminal: Terminal,
   megaphone: Megaphone,
+  lightbulb: Lightbulb,
+  newspaper: Newspaper,
 } as const;
 
 export type IconKey = keyof typeof icons;

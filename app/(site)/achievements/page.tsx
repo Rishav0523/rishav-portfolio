@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Link from "@/components/static-link";
-import { ArrowUpRight, Award, BadgeCheck, CalendarDays } from "lucide-react";
+import { ArrowUpRight, Award, BadgeCheck, CalendarDays, Trophy } from "lucide-react";
 import EmptyState from "@/components/site/empty-state";
-import { achievements, certifications } from "@/lib/content";
+import { achievements, awards, certifications } from "@/lib/content";
 
 export const metadata: Metadata = {
   title: "Achievements & certifications",
   description:
-    "Leadership, event-organising achievements and verified certifications of Rishav Prasad. Only entries with real, checkable results are listed.",
+    "Awards, leadership, event-organising achievements and verified certifications of Rishav Prasad. Only entries with real, checkable results are listed.",
   alternates: { canonical: "/achievements/" },
   openGraph: { url: "/achievements/" },
 };
@@ -23,8 +23,8 @@ export default function AchievementsPage() {
             What the work produced
           </h1>
           <p className="lede animate-rise animate-rise-delay-2 mt-5 max-w-2xl">
-            Roles that turned into events, workshops and organised rounds — plus certifications once
-            the certificates themselves are in hand.
+            Roles that turned into events, workshops and organised rounds — plus competition results
+            and certifications backed by the certificate itself.
           </p>
         </div>
       </section>
@@ -68,45 +68,88 @@ export default function AchievementsPage() {
       </section>
 
       <section className="section border-t border-[var(--line)] bg-[var(--tint)]">
-        <div className="container-page grid gap-10 lg:grid-cols-2">
-          <div>
-            <h2 className="display text-[clamp(1.5rem,2.8vw,2rem)]">Awards &amp; recognition</h2>
+        <div className="container-page">
+          <h2 className="display text-[clamp(1.5rem,2.8vw,2rem)]">Awards &amp; recognition</h2>
+          <p className="lede mt-3 max-w-2xl">
+            Competition results, with the event and team recorded as they were reported.
+          </p>
+
+          {awards.length === 0 ? (
             <EmptyState icon={Award} title="No verified awards listed yet" className="mt-5">
               Competition results and recognitions will appear here only when the certificate or
               official result can be referenced.
             </EmptyState>
-          </div>
-          <div id="certifications">
-            <h2 className="display text-[clamp(1.5rem,2.8vw,2rem)]">Certifications</h2>
-            {certifications.length === 0 ? (
-              <EmptyState icon={BadgeCheck} title="No certifications published yet" className="mt-5">
-                Each certification will be listed with its issuer, date and a verifiable link or
-                file. Nothing is listed until the certificate is on hand.
-              </EmptyState>
-            ) : (
-              <ul className="mt-5 space-y-3">
-                {certifications.map((certification) => (
-                  <li key={`${certification.title}-${certification.issuer}`} className="card p-5">
-                    <p className="font-semibold">{certification.title}</p>
-                    <p className="mt-1 text-sm text-[var(--muted)]">
-                      {certification.issuer} · {certification.year}
+          ) : (
+            <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {awards.map((award) => (
+                <article key={award.title} className="card flex flex-col p-6">
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="icon-tile icon-tile-coral" aria-hidden>
+                      <Trophy className="h-5 w-5" />
+                    </span>
+                    <span className="chip">{award.result}</span>
+                  </div>
+                  <h3 className="mt-5 text-lg font-semibold leading-snug">{award.title}</h3>
+                  {award.team ? (
+                    <p className="mt-2 text-sm text-[var(--muted)]">{award.team}</p>
+                  ) : null}
+                  {award.period ? (
+                    <p className="mt-auto flex items-center gap-2 pt-5 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                      <CalendarDays className="h-3.5 w-3.5" aria-hidden />
+                      {award.period}
                     </p>
-                    {certification.href ? (
-                      <a
-                        href={certification.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--link)] hover:underline"
-                      >
-                        View certificate
-                        <ArrowUpRight className="h-4 w-4" aria-hidden />
-                      </a>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+                  ) : null}
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section id="certifications" className="section border-t border-[var(--line)]">
+        <div className="container-page">
+          <h2 className="display text-[clamp(1.5rem,2.8vw,2rem)]">Certifications</h2>
+          <p className="lede mt-3 max-w-2xl">
+            Each entry links to the certificate itself. Nothing is listed without the file.
+          </p>
+
+          {certifications.length === 0 ? (
+            <EmptyState icon={BadgeCheck} title="No certifications published yet" className="mt-5">
+              Each certification will be listed with its issuer, date and a verifiable link or
+              file. Nothing is listed until the certificate is on hand.
+            </EmptyState>
+          ) : (
+            <ul className="mt-8 grid gap-4 md:grid-cols-2">
+              {certifications.map((certification) => (
+                <li
+                  key={`${certification.title}-${certification.issuer}`}
+                  className="card flex flex-col p-6"
+                >
+                  <span className="icon-tile icon-tile-coral w-fit" aria-hidden>
+                    <BadgeCheck className="h-5 w-5" />
+                  </span>
+                  <p className="mt-5 text-lg font-semibold leading-snug">{certification.title}</p>
+                  <p className="mt-2 text-sm text-[var(--muted)]">
+                    {certification.issuer} · {certification.year}
+                  </p>
+                  {certification.detail ? (
+                    <p className="mt-2 text-sm text-[var(--muted)]">{certification.detail}</p>
+                  ) : null}
+                  {certification.href ? (
+                    <a
+                      href={certification.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-auto inline-flex items-center gap-1.5 pt-5 text-sm font-semibold text-[var(--link)] hover:underline"
+                    >
+                      View certificate
+                      <ArrowUpRight className="h-4 w-4" aria-hidden />
+                    </a>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </section>
 

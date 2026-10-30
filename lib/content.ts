@@ -129,6 +129,18 @@ export const leadership: LeadershipRole[] = [
     ],
   },
   {
+    role: "Joint Secretary",
+    org: "Institution's Innovation Council (IIC), Cooch Behar Government Engineering College",
+    period: "2025 – Present",
+    icon: "lightbulb",
+    summary:
+      "Helping run the institution's innovation and startup-focused programmes, from idea-stage activities to student research initiatives.",
+    points: [
+      "Facilitate innovation and startup-related activities within the institution.",
+      "Coordinate programmes promoting entrepreneurship, research and student innovation.",
+    ],
+  },
+  {
     role: "In-Charge",
     org: "Tech-O-Nicks — the official technical club of CGEC",
     period: "2026 – Present",
@@ -156,6 +168,19 @@ export const leadership: LeadershipRole[] = [
       "Coordinated with faculty members and evaluators.",
       "Assisted with scheduling, event management and execution.",
       "Helped keep the institutional selection process organised and smooth.",
+    ],
+  },
+  {
+    role: "Reporter & Social Media Handler",
+    org: "CGEC Times — Cooch Behar Government Engineering College",
+    period: "2024 – 2026",
+    icon: "newspaper",
+    summary:
+      "Covered campus events and kept the college publication's social channels updated with timely reporting.",
+    points: [
+      "Managed college social media announcements and updates.",
+      "Reported campus happenings and ensured timely communication.",
+      "Coordinated with team members for content creation.",
     ],
   },
 ];
@@ -188,7 +213,7 @@ export const journey = [
   },
 ] as const;
 
-export type ProjectStatus = "In development" | "Shipped";
+export type ProjectStatus = "In development" | "Completed" | "Shipped";
 
 export type Project = {
   slug: string;
@@ -210,6 +235,26 @@ export const projects: Project[] = [
     detail:
       "The backend and final implementation details are still being finalised. Features, screenshots and links will be added here once the build is complete.",
     stack: ["HTML", "CSS", "JavaScript", "MySQL"],
+  },
+  {
+    slug: "online-learning-platform",
+    title: "Online Learning Platform",
+    status: "Completed",
+    summary:
+      "A web-based learning platform with a login flow, course browsing and structured course material.",
+    detail:
+      "Built a responsive interface for managing courses and delivering organised learning content, with user login and course browsing as the core flows.",
+    stack: ["HTML", "CSS", "JavaScript", "Python"],
+  },
+  {
+    slug: "expense-splitter-app",
+    title: "Expense Splitter App",
+    status: "Completed",
+    summary:
+      "An expense-sharing app that splits costs automatically and tracks who owes what.",
+    detail:
+      "Add shared expenses, split amounts between users and settle balances, with a focus on simple, accurate expense management.",
+    stack: ["HTML", "CSS", "JavaScript", "Python"],
   },
 ];
 
@@ -247,21 +292,66 @@ export const achievements: Achievement[] = [
   },
 ];
 
+export type Award = {
+  title: string;
+  result: string;
+  period?: string;
+  team?: string;
+};
+
+export const awards: Award[] = [
+  {
+    title: "CGEC Esperanza 2025 — Robosoccer & Robosumo",
+    result: "Winner",
+    period: "2025",
+    team: "Team ROBOMATES",
+  },
+  {
+    title: "ByteBurst Hackathon 2025",
+    result: "Runner-up",
+    period: "2025",
+    team: "Team THE ERROR",
+  },
+  {
+    title: "Smart India Hackathon 2024",
+    result: "Participant",
+    period: "2024",
+  },
+  {
+    title: "Smart India Hackathon 2025",
+    result: "Participant",
+    period: "2025",
+  },
+  {
+    title: "Ideathon at Inzio, IIIT Guwahati",
+    result: "Participant",
+  },
+];
+
 export type Certification = {
   title: string;
   issuer: string;
   year: string;
+  detail?: string;
   href?: string;
 };
 
-export const certifications: Certification[] = [];
+export const certifications: Certification[] = [
+  {
+    title: "Programming, Data Structures and Algorithms using Python",
+    issuer: "NPTEL",
+    year: "2026",
+    detail: "8-week course · 70% · 3 recommended credits",
+    href: "/certifications/nptel-pdsa-python-2026.pdf",
+  },
+];
 
 export const resumeSummary =
-  "Third-year Computer Science and Engineering student at Cooch Behar Government Engineering College, building for the web and coordinating technical communities. Currently developing an online examination and proctoring system, and serving as Joint Secretary of E-Cell CGEC and In-Charge of Tech-O-Nicks.";
+  "Third-year Computer Science and Engineering student at Cooch Behar Government Engineering College, building for the web and coordinating technical communities. Currently developing an online examination and proctoring system, and serving as Joint Secretary of E-Cell CGEC, Joint Secretary of the Institution's Innovation Council and In-Charge of Tech-O-Nicks.";
 
 export const resumePdf = {
   href: "/resume/rishav-prasad-resume.pdf",
-  approvedForPublish: false,
+  approvedForPublish: true,
 } as const;
 
 export const profileFacts = [

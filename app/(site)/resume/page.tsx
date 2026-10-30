@@ -5,6 +5,7 @@ import PrintResume from "@/components/site/print-resume";
 import SocialLinks from "@/components/site/social-links";
 import {
   achievements,
+  awards,
   certifications,
   education,
   leadership,
@@ -168,7 +169,7 @@ export default function ResumePage() {
               </div>
             </section>
 
-            <section className="resume-row resume-break grid gap-4 border-t border-[var(--line)] py-8 md:grid-cols-[11rem_1fr] md:gap-8">
+            <section className="resume-row grid gap-4 border-t border-[var(--line)] py-8 md:grid-cols-[11rem_1fr] md:gap-8">
               <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--link)]">
                 Projects
               </h2>
@@ -213,6 +214,30 @@ export default function ResumePage() {
 
             <section className="resume-row grid gap-4 border-t border-[var(--line)] py-8 md:grid-cols-[11rem_1fr] md:gap-8">
               <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--link)]">
+                Awards
+              </h2>
+              <ul className="space-y-3">
+                {awards.map((award) => (
+                  <li key={award.title}>
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                      <h3 className="font-semibold">{award.title}</h3>
+                      {award.period ? (
+                        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
+                          {award.period}
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="mt-1 text-sm text-[var(--muted)]">
+                      {award.result}
+                      {award.team ? ` — ${award.team}` : ""}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            <section className="resume-row grid gap-4 border-t border-[var(--line)] py-8 md:grid-cols-[11rem_1fr] md:gap-8">
+              <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--link)]">
                 Certifications
               </h2>
               {certifications.length === 0 ? (
@@ -226,7 +251,18 @@ export default function ResumePage() {
                       <p className="font-semibold">{certification.title}</p>
                       <p className="text-sm text-[var(--muted)]">
                         {certification.issuer} · {certification.year}
+                        {certification.detail ? ` · ${certification.detail}` : ""}
                       </p>
+                      {certification.href ? (
+                        <a
+                          href={certification.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="print-hide mt-1 inline-block text-sm font-semibold text-[var(--link)] hover:underline"
+                        >
+                          View certificate
+                        </a>
+                      ) : null}
                     </li>
                   ))}
                 </ul>

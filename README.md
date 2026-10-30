@@ -9,8 +9,8 @@ public site.
 
 **Status: Gate 3 of 6** — design system, navigation, home page, live deployment to
 `https://rishavprasad.in` with auto-deploy from `main`, the identity layer (About, Education, Skills,
-Experience), and the working record: Projects, Achievements & Certifications, and a printable
-Resume. Remaining gates add the admin dashboard and AirShare.
+Experience), and the working record: Projects, Achievements & Certifications, and a Resume with a
+published PDF. Remaining gates add the admin dashboard and AirShare.
 
 ---
 
@@ -169,8 +169,8 @@ Until the admin dashboard ships in Gate 4, content is edited in source:
 
 - **`lib/content.ts`** — the single factual source for education entries, skill groups, areas of
   interest, leadership roles, the journey timeline, profile facts, social URLs, projects,
-  achievements, certifications and the resume summary. Every page reads from it, so one edit updates
-  all of them together.
+  achievements, awards, certifications and the resume summary. Every page reads from it, so one edit
+  updates all of them together.
 - **`lib/site.ts`** — identity, navigation and focus areas.
 - **`app/(site)/**/page.tsx`** — page-specific headings and prose.
 
@@ -184,34 +184,36 @@ so the figure fills the hero) on the home page, and `about-portrait.jpg` (indoor
 
 ### Resume PDF publication gate
 
-The /resume/ page always renders the current resume from `lib/content.ts` and can be printed to PDF.
-A downloadable PDF is published only when **both** conditions hold:
+The /resume/ page is the source of truth: it renders the current resume from `lib/content.ts` and
+prints to a clean two-page A4 document. The published PDF at
+`public/resume/rishav-prasad-resume.pdf` was generated from that page, so it contains the confirmed
+email, no phone number and the current roles, projects, awards and certification.
+
+A downloadable PDF is served only when **both** conditions hold:
 
 1. `public/resume/rishav-prasad-resume.pdf` exists;
 2. `resumePdf.approvedForPublish` is `true` in `lib/content.ts`.
 
 `lib/resume.ts` checks both at build time, so an unapproved file cannot leak: with the flag false no
-link is rendered at all. The earlier PDFs are reference documents and are deliberately **not** in
-`public/`. To publish a new export: replace the file, flip the flag, commit, and the deploy adds
-View/Download buttons with the file size.
+link is rendered at all. To update the PDF: change the content, print `/resume/` to A4, replace the
+file, commit, and the deploy picks up the new size. The two older reference PDFs are deliberately
+**not** in `public/`.
 
-### Resume data review (Gate 3 input)
+### Resume data review (resolved)
 
-Two older PDFs were supplied as reference only. Nothing from them was published. Where they agree
-with the site they add nothing; where they disagree, the site keeps the information you supplied
-later. Items still waiting on your decision:
+Two older PDFs were supplied as reference. The conflicts were resolved with you on 2026-10-31:
 
-| Field | Old PDF | Site now | Status |
-|---|---|---|---|
-| Email | `prasadrishav959@gmail.com` | `rishav81cse@gmail.com` | **Needs confirmation** |
-| Phone | `+91 747 905 9885` | not published | Needs permission |
-| Degree period | 2023 – 2027 | 2024 – 2028 (expected) | Site value is the correction |
-| CGPA | 8.49 | 8.5 | Confirm rounding |
-| E-Cell / Tech-O-Nicks dates | 2025 | 2026 | Site value is the correction |
-| IIC, CGEC Times roles | listed | not published | Supply details if current |
-| Projects (old set) | several completed builds | only the in-development proctoring system | Not published without your go-ahead |
-| Awards | medals and rankings | none | Not published: no verified source supplied |
-| Skills | wider list | supplied set only | Add any missing skills you want shown |
+| Field | Decision |
+|---|---|
+| Email | `prasadrishav959@gmail.com` — now shown site-wide |
+| Phone | `+91 747 905 9885` is **not** published anywhere, including the PDF |
+| Degree period | 2024 – 2028 (expected) |
+| CGPA | 8.5 / 10 (the old PDFs' 8.49 was superseded) |
+| E-Cell / Tech-O-Nicks dates | 2026; IIC joint secretary since 2025; CGEC Times 2024 – 2026 |
+| Projects | the two completed projects from the resume are listed; the proctoring system stays In development |
+| Awards | the five resume entries are listed (Esperanza, ByteBurst, SIH 2024, SIH 2025, Inzio Ideathon) |
+| IIC and CGEC Times | added to the leadership timeline and resume |
+| Skills | still the supplied set; the older resumes list extra tools that were not added |
 
 ### Navigation uses plain anchors on purpose
 
@@ -232,9 +234,10 @@ load, which is what a mostly-static site wants. Use this `Link` for internal lin
   `/`, `/about/`, `/education/`, `/skills/`, `/experience/`, `/projects/`, `/achievements/` and
   `/resume/`: horizontal overflow is zero at every width, and the desktop nav only appears at
   ≥1280 px.
-- Gate 3 checks: with the PDF gate closed there are **no** `.pdf` links in the DOM on `/resume/`; the
-  page prints to a 2-page A4 document with the nav, footer, actions and notice removed; the
-  projects/achievements pages render their empty states when their arrays are empty.
+- Gate 3 checks: `/resume/` links to the published PDF (159 KB) and offers View and Download; the
+  PDF is a two-page A4 document with the name header, confirmed email, no phone number, media
+  queries hiding the nav, footer and actions, and no section split mid-entry; the projects,
+  achievements and certifications pages render their empty states when their arrays are empty.
 - Dark mode, the mobile menu (open, link visibility, Escape to close), the 404 route, and the
   portrait asset (`naturalWidth 1200`) were checked in the same pass. Screenshots are taken with
   `animations: "disabled"`, because the entrance animations use `fill: both` and otherwise capture
@@ -253,14 +256,16 @@ load, which is what a mostly-static site wants. Use this `Link` for internal lin
   finished.
 - The admin dashboard, contact form backend and AirShare app arrive in Gates 4–6; content is edited
   in source until then.
-- One project is listed, marked **In development**; its backend and final details are not settled,
-  so it has no feature list, screenshots or links yet.
-- No awards or certifications are published: the supplied older resumes mention competition results
-  and courses, but none are listed until their certificates or official results are confirmed.
-- No resume PDF is downloadable yet; the outdated PDFs stay out of `public/` until a current export
-  is approved.
-- The resume page's contact block uses the site email and location, not the phone number or the
-  second email address found in the older PDFs; those remain unpublished.
+- Three projects are listed: two completed builds and the Online Examination and Proctoring System,
+  which stays **In development** with no feature list, screenshots or links yet.
+- Awards come from the supplied resume and are listed as reported; the competition certificates are
+  not on file, so entries have no certificate link.
+- The NPTEL certificate PDF is hosted at `public/certifications/nptel-pdsa-python-2026.pdf` and is
+  linked from the certifications section.
+- The published resume PDF is generated from `/resume/`. If the page changes, regenerate and replace
+  the file so the two do not drift.
+- The phone number from the older PDFs is deliberately unpublished, and the resume uses only the
+  confirmed email and location.
 - Social links point to public profiles; the Instagram handle is the personal account supplied, not
   a portfolio-only account.
 - Motion is global: `prefers-reduced-motion` collapses every animation and transition to ~0 ms and
@@ -275,19 +280,20 @@ load, which is what a mostly-static site wants. Use this `Link` for internal lin
 2. **Gate 2 — identity** (done): About, `/education`, `/skills`, leadership timeline, portrait, OG
    image and social profiles.
 3. **Gate 3 — record** (done): `/projects`, `/achievements`, `/resume` built from supplied facts,
-   empty states for missing records, on-page resume with Print / Save as PDF, PDF publication gate.
-4. **Gate 4**: Hono API on Workers, D1, admin dashboard (CRUD for projects, achievements,
+   awards, the NPTEL certificate, the updated leadership roles, empty states for missing records,
+   on-page resume and a published PDF produced from it.
+4. **Gate 4**: Hono API on Workers, D1, admin dashboard (CRUD for projects, achievements, awards,
    certifications, resume), media uploads (R2), contact form.
 5. **Gate 5**: AirShare LAN app + public explainer page.
 6. **Gate 6**: hardening, tests, full deployment documentation, production checklist.
 
 ## Needed from you
 
-- **Resume PDF**: replace the outdated file, then set `approvedForPublish: true` in `lib/content.ts`.
-  Until then `/resume/` offers Print / Save as PDF only.
-- **Projects**: name, one-line summary, description, stack, links and screenshots for each new
+- **Skills**: the older resumes list C++, NumPy, Pandas, Scikit-learn, Git and GitHub; none of those
+  are on the site. Say which are current and they will be added to `skillGroups`.
+- **New projects**: name, one-line summary, description, stack, links and screenshots for each new
   project — add them to the `projects` array.
-- **Certifications**: title, issuer, year and, if you want it linked, the public certificate URL.
-- **Awards**: only verified ones, with the issuing body and date.
-- Confirmation of the two contradictory contact details found in the old PDFs (see "Resume data
-  review" above).
+- **More certifications**: title, issuer, year, result and the certificate file.
+- **Award certificates**: the five awards are listed from your resume; send the certificates if you
+  want each entry to link to proof.
+

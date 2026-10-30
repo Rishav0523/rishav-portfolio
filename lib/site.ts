@@ -3,7 +3,7 @@ export type NavItem = { href: string; label: string };
 export const site = {
   name: "Rishav Prasad",
   url: (process.env.SITE_URL ?? "https://rishavprasad.in").replace(/\/+$/, ""),
-  email: "rishav81cse@gmail.com",
+  email: "prasadrishav959@gmail.com",
   location: "Cooch Behar, West Bengal, India",
   college: "Cooch Behar Government Engineering College",
   headline: "Building Technology. Exploring Possibilities. Creating Impact.",

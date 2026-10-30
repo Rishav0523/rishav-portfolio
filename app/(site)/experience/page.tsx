@@ -8,7 +8,7 @@ import { icons } from "@/lib/icons";
 export const metadata: Metadata = {
   title: "Experience",
   description:
-    "Leadership roles of Rishav Prasad — Joint Secretary of E-Cell CGEC, In-Charge of Tech-O-Nicks, and Overall Coordinator for the Smart India Hackathon 2026 institutional round.",
+    "Leadership roles of Rishav Prasad — Joint Secretary of E-Cell CGEC and the Institution's Innovation Council, In-Charge of Tech-O-Nicks, SIH 2026 coordinator, and reporter for CGEC Times.",
   alternates: { canonical: "/experience/" },
   openGraph: { url: "/experience/" },
 };
@@ -24,8 +24,9 @@ export default function ExperiencePage() {
             Where I show up and lead
           </h1>
           <p className="lede animate-rise animate-rise-delay-2 mt-5 max-w-2xl">
-            Three roles, all running at once through 2026: an entrepreneurship cell, a technical club,
-            and the institutional round of a national hackathon.
+            Five roles across 2024–2026: an entrepreneurship cell, the Institution&apos;s Innovation
+            Council, a technical club, the campus publication, and the institutional round of a
+            national hackathon.
           </p>
         </div>
       </section>
@@ -38,8 +39,8 @@ export default function ExperiencePage() {
               return (
                 <TimelineItem key={role.role}>
                   <article className="card p-6 md:p-7">
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div className="flex items-start gap-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex min-w-0 items-start gap-4">
                         <span className="icon-tile icon-tile-coral shrink-0">
                           <Icon className="h-5 w-5" aria-hidden />
                         </span>
@@ -50,7 +51,7 @@ export default function ExperiencePage() {
                           </p>
                         </div>
                       </div>
-                      <span className="chip">{role.period}</span>
+                      <span className="chip shrink-0">{role.period}</span>
                     </div>
 
                     <p className="mt-5 text-sm leading-relaxed text-[var(--muted)]">{role.summary}</p>
