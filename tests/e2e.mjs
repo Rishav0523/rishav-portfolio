@@ -21,6 +21,7 @@ const PUBLIC_ROUTES = [
   "/achievements/",
   "/resume/",
   "/airshare/",
+  "/airshare/app/",
   "/contact/",
 ];
 

@@ -226,7 +226,7 @@ email, no phone number, the 2024–2028 degree period and the 8.5 CGPA.
 ```bash
 npm run typecheck   # Next app + Worker (separate tsconfigs)
 npm test            # 31 Vitest tests: schema, PBKDF2, sessions, SHA-256, AirShare protocol
-npm run test:e2e    # 30 Playwright checks against a running stack
+npm run test:e2e    # 31 Playwright checks against a running stack
 npm run test:e2e:airshare   # two isolated browser contexts join one PIN room
 cd airshare && npm test   # 8 tests for the optional standalone LAN app
 ```
