@@ -27,7 +27,9 @@ export async function verifyPassword(password: string, stored: string): Promise<
   const parts = stored.trim().split("$");
   if (parts.length !== 4 || parts[0] !== "pbkdf2_sha256") return false;
   const iterations = Number.parseInt(parts[1], 10);
-  if (!Number.isFinite(iterations) || iterations < 100_000 || iterations > 1_000_000) return false;
+  // Workers hard-caps PBKDF2 at 100k iterations: anything higher throws instead
+  // of returning false, so reject it here rather than in a 503 handler.
+  if (iterations !== 100_000) return false;
 
   let salt: Uint8Array<ArrayBuffer>;
   let expected: Uint8Array<ArrayBuffer>;

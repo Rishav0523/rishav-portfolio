@@ -73,7 +73,9 @@ Pick a long, unique password (16+ characters; do not reuse any other password):
 node scripts/hash-password.mjs "<your password>" | npx wrangler secret put ADMIN_PASSWORD_HASH
 ```
 
-The script prints only `pbkdf2_sha256$210000$<salt>$<hash>`; the plaintext never touches disk. If
+The script prints only `pbkdf2_sha256$100000$<salt>$<hash>`; the plaintext never touches disk. The
+iteration count is fixed at 100,000 because Workers refuses PBKDF2 above that limit — a hash made at
+210,000 (the script's older default) is rejected and sign-in returns "Invalid credentials." If
 the shell records the command in history, clear that entry afterwards (`history -d <n>` in Bash).
 To change the password later, repeat this command with a new password. To force every session out,
 rotate `SESSION_SECRET` as well.
@@ -191,7 +193,7 @@ npx wrangler dev --port 8787
 ```
 TURNSTILE_SECRET=...
 SESSION_SECRET=...
-ADMIN_PASSWORD_HASH=pbkdf2_sha256$210000$...
+ADMIN_PASSWORD_HASH=pbkdf2_sha256$100000$...
 ```
 
 The local admin password is separate from production. Generate a hash with the same script and keep

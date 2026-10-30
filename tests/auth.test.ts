@@ -8,7 +8,7 @@ function base64url(bytes: Uint8Array): string {
   return Buffer.from(bytes).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-async function makeHash(password: string, iterations = 210_000): Promise<string> {
+async function makeHash(password: string, iterations = 100_000): Promise<string> {
   const salt = webcrypto.getRandomValues(new Uint8Array(16));
   const key = await webcrypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, [
     "deriveBits",
@@ -40,7 +40,16 @@ describe("verifyPassword", () => {
     await expect(verifyPassword("x", "plaintext")).resolves.toBe(false);
     await expect(verifyPassword("x", `bcrypt$10$${parts[2]}$${parts[3]}`)).resolves.toBe(false);
     await expect(verifyPassword("x", `pbkdf2_sha256$1000$${parts[2]}$${parts[3]}`)).resolves.toBe(false);
+    await expect(verifyPassword("x", `pbkdf2_sha256$99999$${parts[2]}$${parts[3]}`)).resolves.toBe(false);
     await expect(verifyPassword("x", `pbkdf2_sha256$210000$${parts[2]}$***`)).resolves.toBe(false);
+    await expect(verifyPassword("x", `pbkdf2_sha256$abc$${parts[2]}$${parts[3]}`)).resolves.toBe(false);
+  });
+
+  // Workers refuses PBKDF2 above 100k iterations, so a stronger stored hash must
+  // fail closed instead of throwing a 503.
+  it("rejects hashes above the Workers iteration cap without throwing", async () => {
+    const stored = await makeHash("correct horse battery staple", 210_000);
+    await expect(verifyPassword("correct horse battery staple", stored)).resolves.toBe(false);
   });
 });
 

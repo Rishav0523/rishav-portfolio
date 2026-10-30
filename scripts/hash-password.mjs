@@ -5,7 +5,9 @@
 
 import { webcrypto as crypto } from "node:crypto";
 
-const ITERATIONS = 210_000;
+// Cloudflare Workers rejects PBKDF2 iteration counts above 100,000, so 100,000
+// is the strongest setting that still verifies inside the Worker.
+const ITERATIONS = 100_000;
 
 const password = process.argv[2];
 if (!password) {

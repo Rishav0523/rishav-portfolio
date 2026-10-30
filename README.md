@@ -107,8 +107,8 @@ Invalid saves return the exact field errors.
 ## Admin dashboard
 
 - URL: `https://rishavprasad.in/admin/` (also works locally via `wrangler dev`).
-- Sign-in: password only, hashed with PBKDF2-SHA256 (210,000 iterations). Sessions are HMAC-signed,
-  `HttpOnly`, `SameSite=Strict`, `Secure` in production, and last 12 hours.
+- Sign-in: password only, hashed with PBKDF2-SHA256 at 100,000 iterations (the Workers ceiling).
+  Sessions are HMAC-signed, `HttpOnly`, `SameSite=Strict`, `Secure` in production, and last 12 hours.
 - Rate limit: 8 failed attempts per IP hash per 15 minutes; content saves are capped at 1 MB.
 - Tabs: Profile, Education, Skills, Experience, Projects, Achievements, Resume, Messages, Media.
 - Publish is disabled while edits are unsaved; **Save changes → Publish** is the workflow.
@@ -230,7 +230,7 @@ email, no phone number, the 2024–2028 degree period and the 8.5 CGPA.
 
 ```bash
 npm run typecheck   # Next app + Worker (separate tsconfigs)
-npm test            # 39 Vitest tests: schema, PBKDF2, sessions, SHA-256, AirShare protocol
+npm test            # 40 Vitest tests: schema, PBKDF2, sessions, SHA-256, AirShare protocol
 npm run test:e2e    # 31 Playwright checks against a running stack
 npm run test:e2e:airshare   # two isolated browser contexts join one PIN room
 cd airshare && npm test   # 8 tests for the optional standalone LAN app

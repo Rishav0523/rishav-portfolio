@@ -45,8 +45,8 @@ access the admin area without permission.
 ### Admin authentication
 
 - Single owner password, never stored in plaintext or in source control. The Worker stores only a
-  PBKDF2-SHA256 hash (`format: pbkdf2_sha256$<iterations>$<salt>$<hash>`, 100k–1M iterations,
-  generated at 210k).
+  PBKDF2-SHA256 hash (`format: pbkdf2_sha256$<iterations>$<salt>$<hash>`, 100,000 iterations —
+  Workers rejects higher counts, and any other count is refused without comparison).
 - Sessions are HMAC-SHA256 signed tokens in an `HttpOnly` cookie, 12-hour lifetime, verified with a
   constant-time comparison. Rotating `SESSION_SECRET` invalidates every session.
 - Sign-in is limited to 8 failures per hashed IP per 15 minutes; password comparison is constant
