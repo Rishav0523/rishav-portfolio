@@ -34,7 +34,7 @@ export const education: EducationEntry[] = [
   {
     degree: "B.Tech, Computer Science and Engineering",
     institution: "Cooch Behar Government Engineering College",
-    period: "2023 – 2028 (expected)",
+    period: "2024 – 2028 (expected)",
     score: "8.5 / 10",
     scoreLabel: "Current CGPA",
     location: "Cooch Behar, West Bengal",
@@ -172,7 +172,7 @@ export const journey = [
     detail: "Delhi Public School, Siliguri — 92.4%",
   },
   {
-    year: "2023",
+    year: "2024",
     title: "Started B.Tech CSE",
     detail: "Cooch Behar Government Engineering College",
   },
