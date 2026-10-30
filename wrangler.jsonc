@@ -1,17 +1,38 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "rishav-portfolio",
+  "main": "worker/index.ts",
   "compatibility_date": "2026-10-01",
 
   // Static export lives in ./out after `npm run build`.
-  // Requests for these files never invoke a Worker and are free/unlimited.
+  // Requests for these files never invoke the Worker and are free/unlimited,
+  // except the API and R2 media paths listed in run_worker_first.
   "assets": {
     "directory": "./out",
+    "binding": "ASSETS",
     "html_handling": "auto-trailing-slash",
-    "not_found_handling": "404-page"
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/*", "/media/*"]
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "rishav-portfolio",
+      "database_id": "e3c63392-6892-402f-8bdd-70b379fbc664",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  // R2 is optional: the Worker returns 503 for /media/* and uploads until the
+  // bucket below exists on the account. Create it, then uncomment.
+  // "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "rishav-portfolio-media" }],
+
+  "vars": {
+    "SITE_URL": "https://rishavprasad.in",
+    "GITHUB_REPO": "Rishav0523/rishav-portfolio"
   },
 
   // Attach the production domain. Requires the zone to be active on this account.
-  // Remove this block if you prefer to attach the domain from the dashboard.
   "routes": [{ "pattern": "rishavprasad.in", "custom_domain": true }]
 }

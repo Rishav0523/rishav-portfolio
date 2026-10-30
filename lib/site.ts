@@ -4,6 +4,9 @@ export const site = {
   name: "Rishav Prasad",
   url: (process.env.SITE_URL ?? "https://rishavprasad.in").replace(/\/+$/, ""),
   email: "prasadrishav959@gmail.com",
+  // Public by design (rendered in the page). Override per environment if needed.
+  turnstileSiteKey:
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "0x4AAAAAAFtJIYxwdn-xwScV",
   location: "Cooch Behar, West Bengal, India",
   college: "Cooch Behar Government Engineering College",
   headline: "Building Technology. Exploring Possibilities. Creating Impact.",

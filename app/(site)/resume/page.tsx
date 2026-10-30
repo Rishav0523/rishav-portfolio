@@ -64,7 +64,7 @@ export default function ResumePage() {
                   </a>
                   <a href={pdf.href} download className="btn btn-outline">
                     <Download className="h-4 w-4" aria-hidden />
-                    Download PDF ({pdf.sizeLabel})
+                    Download PDF{pdf.sizeLabel ? ` (${pdf.sizeLabel})` : ""}
                   </a>
                 </>
               ) : null}

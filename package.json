@@ -6,17 +6,20 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "prebuild": "node scripts/fetch-content.mjs",
     "preview": "npx serve out -l 4173",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p worker/tsconfig.json",
     "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
+    "hono": "^4.13.14",
     "lucide-react": "^1.65.0",
     "next": "^16.4.3",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261030.1",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",

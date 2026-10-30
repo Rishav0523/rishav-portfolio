@@ -287,6 +287,71 @@
     color: var(--muted);
   }
 
+  .form-field {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .form-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--ink);
+  }
+
+  .form-input {
+    width: 100%;
+    min-height: 2.9rem;
+    border-radius: 0.9rem;
+    border: 1px solid var(--line-strong);
+    background: color-mix(in srgb, var(--surface) 65%, transparent);
+    padding: 0.7rem 0.95rem;
+    font-size: 0.92rem;
+    color: var(--ink);
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .form-input::placeholder {
+    color: color-mix(in srgb, var(--muted) 75%, transparent);
+  }
+
+  .form-input:focus-visible {
+    outline: none;
+    border-color: var(--cerulean);
+    box-shadow: 0 0 0 3px rgba(0, 129, 167, 0.18);
+  }
+
+  textarea.form-input {
+    min-height: 9rem;
+    resize: vertical;
+    line-height: 1.6;
+  }
+
+  .form-hint {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .form-error {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: #b23c33;
+  }
+
+  .dark .form-error {
+    color: #ff9a92;
+  }
+
+  .form-status {
+    border-radius: 0.9rem;
+    border: 1px solid var(--line);
+    background: color-mix(in srgb, var(--surface) 70%, transparent);
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+
   .icon-tile {
     display: inline-flex;
     align-items: center;
