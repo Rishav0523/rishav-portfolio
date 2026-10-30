@@ -139,8 +139,11 @@ How the pieces fit:
 - File bytes never touch the server. They move over an ordered, reliable data channel in 64 KB
   chunks with backpressure; the receiving browser holds them in memory until you save them.
 - After a connection is made, the client inspects the selected candidate pair and republishes the
-  candidate lines the browsers exchanged, because Chrome can blank `getStats()` addresses. If
-  either side is not a private/LAN address or an mDNS hostname, the connection is stopped.
+  candidate lines the browsers exchanged, because Chrome can blank `getStats()` addresses. Both
+  ends must be host candidates, and the pair must look local: a private, loopback, link-local or
+  mDNS address on either side, or two addresses on the same subnet (the same IPv6 /64, which is how
+  most phones negotiate). Otherwise the connection is stopped. Because no STUN or TURN server
+  exists, a private endpoint cannot be reached from another network in the first place.
 - Limits: 8 devices per room, 100 MB per file, 90 s peer expiry, 10 min signal expiry, 30 joins per
   10 min per IP, 120 signals per minute per peer, 64 KB per signal.
 

@@ -75,7 +75,7 @@ export default function AirSharePage() {
             <h2 className="mt-4 text-base font-semibold">Same network only</h2>
             <p className="mt-2 text-sm leading-relaxed text-[var(--muted)]">
               No STUN or relay server is configured, and the connection is checked after it is made.
-              If either side is not a local address, AirShare stops it.
+              If the two ends do not appear to share a local network, AirShare stops it.
             </p>
           </article>
           <article className="card p-6">

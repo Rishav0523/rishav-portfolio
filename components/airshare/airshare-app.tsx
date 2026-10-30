@@ -25,6 +25,7 @@ import {
   formatBytes,
   generatePin,
   isLanConnection,
+  isPrivateAddress,
   parseIceCandidate,
   randomHex,
   resolveCandidate,
@@ -148,6 +149,13 @@ const STATUS_DOT: Record<ConnectionStatus, string> = {
   blocked: "bg-[var(--coral)]",
   failed: "bg-[var(--muted)]",
 };
+
+function describeCandidate(candidate: { type: string; address: string | null }): string {
+  const kind = candidate.type || "unknown";
+  if (!candidate.address) return `${kind}/unresolved`;
+  if (isPrivateAddress(candidate.address)) return `${kind}/local`;
+  return candidate.address.includes(":") ? `${kind}/ipv6` : `${kind}/public`;
+}
 
 function newRemote(peer: ServerPeer): RemoteSession {
   return {
@@ -400,7 +408,7 @@ export default function AirShareApp() {
 
       if (!isLanConnection(local, remoteCandidate)) {
         remote.status = "blocked";
-        remote.detail = "AirShare stopped this connection because it did not use a local network address.";
+        remote.detail = `AirShare stopped this connection because the two devices did not appear to share a local network (${describeCandidate(local)} ↔ ${describeCandidate(remoteCandidate)}).`;
         closePc(remote);
         syncPeers();
         return;

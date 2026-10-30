@@ -11,6 +11,7 @@ import {
   randomHex,
   resolveCandidate,
   safeFilename,
+  sameSubnet,
 } from "../components/airshare/protocol";
 
 describe("isPrivateAddress", () => {
@@ -61,6 +62,65 @@ describe("LAN candidate checks", () => {
       false,
     );
     expect(isLanConnection(null, { type: "host", address: "10.0.0.2" })).toBe(false);
+  });
+
+  it("accepts a host pair when one side is private or mDNS", () => {
+    expect(
+      isLanConnection({ type: "host", address: "192.168.1.5" }, { type: "host", address: "a1b2c3.local" }),
+    ).toBe(true);
+    expect(
+      isLanConnection(
+        { type: "host", address: "a1b2c3.local" },
+        { type: "host", address: "2a02:810d:1234:5678::1" },
+      ),
+    ).toBe(true);
+  });
+
+  it("accepts two global addresses on the same subnet", () => {
+    expect(
+      isLanConnection(
+        { type: "host", address: "2a02:810d:1234:5678:aaaa::1" },
+        { type: "host", address: "2a02:810d:1234:5678:bbbb::2" },
+      ),
+    ).toBe(true);
+    expect(
+      isLanConnection({ type: "host", address: "203.0.113.10" }, { type: "host", address: "203.0.113.20" }),
+    ).toBe(true);
+  });
+
+  it("rejects two global addresses on different subnets", () => {
+    expect(
+      isLanConnection(
+        { type: "host", address: "2a02:810d:1234:5679::1" },
+        { type: "host", address: "2a02:810d:1234:5678::2" },
+      ),
+    ).toBe(false);
+    expect(
+      isLanConnection({ type: "host", address: "203.0.113.10" }, { type: "host", address: "198.51.100.20" }),
+    ).toBe(false);
+    expect(isLanConnection({ type: "host", address: "" }, { type: "host", address: "" })).toBe(false);
+  });
+});
+
+describe("sameSubnet", () => {
+  it("compares the IPv6 /64 prefix", () => {
+    expect(sameSubnet("2a02:810d::1", "2a02:810d:0:0:ffff::2")).toBe(true);
+    expect(sameSubnet("2a02:810d:0:1::1", "2a02:810d::2")).toBe(false);
+    expect(sameSubnet("fe80::1", "fe80::2")).toBe(true);
+    expect(sameSubnet("[2a02:810d::1]", "2a02:810d::2")).toBe(true);
+    expect(sameSubnet("2a02:810d::1%wlan0", "2a02:810d::2")).toBe(true);
+  });
+
+  it("compares the IPv4 /24 prefix", () => {
+    expect(sameSubnet("203.0.113.10", "203.0.113.250")).toBe(true);
+    expect(sameSubnet("203.0.113.10", "203.0.114.10")).toBe(false);
+    expect(sameSubnet("192.168.1.5", "10.0.0.5")).toBe(false);
+  });
+
+  it("returns false for mixed families or missing addresses", () => {
+    expect(sameSubnet("2a02:810d::1", "203.0.113.10")).toBe(false);
+    expect(sameSubnet(null, "10.0.0.1")).toBe(false);
+    expect(sameSubnet("a1b2c3.local", "2a02:810d::1")).toBe(false);
   });
 });
 

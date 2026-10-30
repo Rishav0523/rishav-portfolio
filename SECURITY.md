@@ -117,9 +117,10 @@ signaling; file contents never pass through it.
 - **Rate limits:** 30 joins per 10 minutes per IP hash, 120 signals per minute per peer, 8 peers per
   room, 64 KB signal payload cap. Signaling is validated to SDP and ICE shapes only.
 - **Direct, encrypted transport.** Data channels use DTLS, and no STUN or TURN server is configured,
-  so media cannot be relayed. The app checks the selected candidate pair against the ICE candidate
-  lines the browsers exchanged and closes the connection unless both ends are private, loopback,
-  link-local, or `.local` addresses.
+  so media cannot be relayed. The app checks the selected host candidate pair and closes the
+  connection unless one end is a private, loopback, link-local or `.local` address, or both ends
+  share a subnet (the same IPv6 /64, or the same IPv4 /24). Without a relay, a private endpoint is
+  unreachable from another network, so that check is meaningful rather than cosmetic.
 - **Passwords and secrets:** AirShare uses no account and no cookies; the admin session cookie is
   not involved.
 - **Limits:** 100 MB per file, 8 devices per room, memory-only transfers, no resume after a drop.
