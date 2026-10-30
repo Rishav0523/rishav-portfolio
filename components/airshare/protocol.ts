@@ -151,7 +151,9 @@ export type CandidateStatsSummary = {
 };
 
 // Chrome can blank the address in getStats(); match the selected pair back to
-// the candidates the browser actually exchanged to learn the address.
+// the candidates the browser actually exchanged to learn the address. A
+// peer-reflexive candidate is the peer's real source address, discovered from
+// its first connectivity check, so it is resolved by port like a host one.
 export function resolveCandidate(
   report: CandidateStatsSummary,
   gathered: ParsedCandidate[],
@@ -162,7 +164,7 @@ export function resolveCandidate(
     (item) =>
       item.port === report.port &&
       (!report.protocol || item.protocol === report.protocol) &&
-      (!report.type || item.type === report.type),
+      (report.type === "prflx" || !report.type || item.type === report.type),
   );
   if (matches.length === 0) return { type: report.type, address: null };
   const publicMatch = matches.find((item) => !isPrivateAddress(item.address));
@@ -181,11 +183,14 @@ export function isLanConnection(
   remote: CandidateSummary | null | undefined,
 ): boolean {
   if (!local || !remote) return false;
-  if (local.type !== "host" || remote.type !== "host") return false;
-  // With no STUN or TURN server, a working pair with a private or mDNS endpoint
-  // can only exist on one link: a private/link-local address is not routable
-  // from another network. Phones often negotiate over global IPv6 instead, so
-  // also accept two addresses that share a subnet.
+  // Only host and peer-reflexive candidates can exist without STUN or TURN;
+  // server-reflexive and relayed candidates would mean a server was involved.
+  const direct = (type: string) => type === "host" || type === "prflx";
+  if (!direct(local.type) || !direct(remote.type)) return false;
+  // A working pair with a private or mDNS endpoint can only exist on one link:
+  // a private/link-local address is not routable from another network. Phones
+  // often negotiate over global IPv6 instead, so also accept two addresses
+  // that share a subnet.
   if (isPrivateAddress(local.address) || isPrivateAddress(remote.address)) return true;
   return sameSubnet(local.address, remote.address);
 }

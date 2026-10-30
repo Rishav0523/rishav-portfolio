@@ -60,6 +60,43 @@ async function waitForConnected(page) {
   );
 }
 
+// Phones often negotiate over global IPv6 and report the other side as an
+// unnamed peer-reflexive candidate. Rewrite the selected pair to look like that.
+async function forcePhoneCandidates(page, selfAddress) {
+  await page.addInitScript((address) => {
+    const original = RTCPeerConnection.prototype.getStats;
+    RTCPeerConnection.prototype.getStats = async function (...args) {
+      const report = await original.apply(this, args);
+      const rows = new Map();
+      report.forEach((row, id) => rows.set(id, { ...row }));
+      let pair = null;
+      rows.forEach((row) => {
+        if (
+          row.type === "candidate-pair" &&
+          (row.selected || row.nominated) &&
+          (row.state === "succeeded" || row.state === "in-progress")
+        ) {
+          pair = row;
+        }
+      });
+      if (pair) {
+        const local = rows.get(pair.localCandidateId);
+        if (local) {
+          local.address = address;
+          local.candidateType = "host";
+        }
+        const remote = rows.get(pair.remoteCandidateId);
+        if (remote) {
+          remote.address = "";
+          remote.candidateType = "prflx";
+          remote.port = 0;
+        }
+      }
+      return rows;
+    };
+  }, selfAddress);
+}
+
 await check("a room is created with a generated 8-digit PIN", async () => {
   const response = await alpha.goto(`${BASE}/airshare/app/`, { waitUntil: "load" });
   assert.equal(response?.status(), 200, `expected 200, got ${response?.status()}`);
@@ -138,6 +175,72 @@ await check("leaving removes the device from the room", async () => {
     undefined,
     { timeout: 20_000 },
   );
+});
+
+await check("a peer-reflexive IPv6 pair is accepted on both sides", async () => {
+  const deltaContext = await browser.newContext({ viewport: { width: 1280, height: 1000 } });
+  const echoContext = await browser.newContext({ viewport: { width: 1280, height: 1000 } });
+  const delta = await deltaContext.newPage();
+  const echo = await echoContext.newPage();
+  delta.setDefaultTimeout(30_000);
+  echo.setDefaultTimeout(30_000);
+  delta.on("pageerror", (error) => pageErrors.push(`delta: ${String(error)}`));
+  echo.on("pageerror", (error) => pageErrors.push(`echo: ${String(error)}`));
+  await forcePhoneCandidates(delta, "2a02:810d:1234:5678::2");
+  await forcePhoneCandidates(echo, "2a02:810d:1234:5678::3");
+
+  await delta.goto(`${BASE}/airshare/app/`, { waitUntil: "load" });
+  await delta.fill('[data-testid="airshare-name"]', "Delta phone");
+  await delta.click('[data-testid="airshare-create"]');
+  await delta.waitForSelector(PIN_SELECTOR, { timeout: 15_000 });
+  const phonePin = ((await delta.textContent(PIN_SELECTOR)) ?? "").trim();
+  assert.match(phonePin, /^\d{8}$/);
+
+  await echo.goto(`${BASE}/airshare/app/`, { waitUntil: "load" });
+  await echo.fill('[data-testid="airshare-name"]', "Echo phone");
+  await echo.getByRole("tab", { name: "Join with a PIN" }).click();
+  await echo.fill('[data-testid="airshare-pin-input"]', phonePin);
+  await echo.click('[data-testid="airshare-join"]');
+
+  await waitForConnected(delta);
+  await waitForConnected(echo);
+  await deltaContext.close();
+  await echoContext.close();
+});
+
+await check("different IPv6 subnets are still stopped", async () => {
+  const foxtrotContext = await browser.newContext({ viewport: { width: 1280, height: 1000 } });
+  const golfContext = await browser.newContext({ viewport: { width: 1280, height: 1000 } });
+  const foxtrot = await foxtrotContext.newPage();
+  const golf = await golfContext.newPage();
+  foxtrot.setDefaultTimeout(30_000);
+  golf.setDefaultTimeout(30_000);
+  foxtrot.on("pageerror", (error) => pageErrors.push(`foxtrot: ${String(error)}`));
+  golf.on("pageerror", (error) => pageErrors.push(`golf: ${String(error)}`));
+  await forcePhoneCandidates(foxtrot, "2a02:810d:1234:5679::2");
+  await forcePhoneCandidates(golf, "2a02:810d:1234:5678::3");
+
+  await foxtrot.goto(`${BASE}/airshare/app/`, { waitUntil: "load" });
+  await foxtrot.fill('[data-testid="airshare-name"]', "Foxtrot network");
+  await foxtrot.click('[data-testid="airshare-create"]');
+  await foxtrot.waitForSelector(PIN_SELECTOR, { timeout: 15_000 });
+  const otherPin = ((await foxtrot.textContent(PIN_SELECTOR)) ?? "").trim();
+
+  await golf.goto(`${BASE}/airshare/app/`, { waitUntil: "load" });
+  await golf.fill('[data-testid="airshare-name"]', "Golf network");
+  await golf.getByRole("tab", { name: "Join with a PIN" }).click();
+  await golf.fill('[data-testid="airshare-pin-input"]', otherPin);
+  await golf.click('[data-testid="airshare-join"]');
+
+  for (const page of [foxtrot, golf]) {
+    await page.waitForFunction(
+      (selector) => document.querySelector(selector)?.textContent?.includes("not a local connection") ?? false,
+      STATUS_SELECTOR,
+      { timeout: 45_000 },
+    );
+  }
+  await foxtrotContext.close();
+  await golfContext.close();
 });
 
 await check("no uncaught page errors", async () => {

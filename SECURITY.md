@@ -117,10 +117,16 @@ signaling; file contents never pass through it.
 - **Rate limits:** 30 joins per 10 minutes per IP hash, 120 signals per minute per peer, 8 peers per
   room, 64 KB signal payload cap. Signaling is validated to SDP and ICE shapes only.
 - **Direct, encrypted transport.** Data channels use DTLS, and no STUN or TURN server is configured,
-  so media cannot be relayed. The app checks the selected host candidate pair and closes the
-  connection unless one end is a private, loopback, link-local or `.local` address, or both ends
-  share a subnet (the same IPv6 /64, or the same IPv4 /24). Without a relay, a private endpoint is
-  unreachable from another network, so that check is meaningful rather than cosmetic.
+  so media cannot be relayed. The app checks the selected candidate pair and closes the connection
+  unless one end is a private, loopback, link-local or `.local` address, or both ends share a subnet
+  (the same IPv6 /64, or the same IPv4 /24). Host and peer-reflexive candidates are both accepted
+  because neither involves a server. When a browser hides the peer's address behind an unnamed
+  peer-reflexive candidate, each side reports the address it resolved for itself and the two are
+  compared. Without a relay, a private endpoint is unreachable from another network, so the check is
+  meaningful rather than cosmetic.
+- **The check is best-effort, not a security boundary.** A modified client could report a private
+  address it does not have. The PIN is the access control; the network check exists so the stock app
+  cannot be used across networks by mistake.
 - **Passwords and secrets:** AirShare uses no account and no cookies; the admin session cookie is
   not involved.
 - **Limits:** 100 MB per file, 8 devices per room, memory-only transfers, no resume after a drop.

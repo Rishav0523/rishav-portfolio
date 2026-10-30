@@ -30,6 +30,7 @@ import {
   randomHex,
   resolveCandidate,
   safeFilename,
+  type CandidateSummary,
   type ParsedCandidate,
 } from "./protocol";
 
@@ -77,6 +78,10 @@ type RemoteSession = {
   preIce: { session: string; candidate: RTCIceCandidateInit }[];
   localCandidates: ParsedCandidate[];
   remoteCandidates: ParsedCandidate[];
+  ownLocal: CandidateSummary | null;
+  peerLocal: CandidateSummary | null;
+  lanSent: boolean;
+  lanTimer: number | null;
   connectTimer: number | null;
   retryTimer: number | null;
   disconnectTimer: number | null;
@@ -173,6 +178,10 @@ function newRemote(peer: ServerPeer): RemoteSession {
     preIce: [],
     localCandidates: [],
     remoteCandidates: [],
+    ownLocal: null,
+    peerLocal: null,
+    lanSent: false,
+    lanTimer: null,
     connectTimer: null,
     retryTimer: null,
     disconnectTimer: null,
@@ -262,9 +271,11 @@ export default function AirShareApp() {
     if (remote.connectTimer !== null) window.clearTimeout(remote.connectTimer);
     if (remote.retryTimer !== null) window.clearTimeout(remote.retryTimer);
     if (remote.disconnectTimer !== null) window.clearTimeout(remote.disconnectTimer);
+    if (remote.lanTimer !== null) window.clearTimeout(remote.lanTimer);
     remote.connectTimer = null;
     remote.retryTimer = null;
     remote.disconnectTimer = null;
+    remote.lanTimer = null;
 
     const channel = remote.dc;
     const pc = remote.pc;
@@ -275,6 +286,9 @@ export default function AirShareApp() {
     remote.pendingIce = [];
     remote.localCandidates = [];
     remote.remoteCandidates = [];
+    remote.ownLocal = null;
+    remote.peerLocal = null;
+    remote.lanSent = false;
     remote.sessionId = "";
 
     if (channel) {
@@ -364,6 +378,54 @@ export default function AirShareApp() {
     syncPeers();
   }
 
+  function sendLanReport(remote: RemoteSession) {
+    if (remote.lanSent) return;
+    const own = remote.ownLocal;
+    const channel = remote.dc;
+    if (!own || !channel || channel.readyState !== "open") return;
+    try {
+      channel.send(JSON.stringify({ type: "lan", candidate: { type: own.type, address: own.address } }));
+      remote.lanSent = true;
+    } catch {
+      // The peer still checks its own candidate pair; nothing else to do here.
+    }
+  }
+
+  function blockLan(remote: RemoteSession, local: CandidateSummary, peer: CandidateSummary) {
+    remote.status = "blocked";
+    remote.detail = `AirShare stopped this connection because the two devices did not appear to share a local network (${describeCandidate(local)} ↔ ${describeCandidate(peer)}).`;
+    closePc(remote);
+    syncPeers();
+  }
+
+  function resolveLanWithPeer(remote: RemoteSession) {
+    if (remote.verified || remote.status === "blocked") return;
+    const own = remote.ownLocal;
+    const peer = remote.peerLocal;
+    if (!own || !peer) return;
+    if (remote.lanTimer !== null) {
+      window.clearTimeout(remote.lanTimer);
+      remote.lanTimer = null;
+    }
+    if (isLanConnection(own, peer)) {
+      remote.verified = true;
+      maybeConnected(remote);
+      return;
+    }
+    blockLan(remote, own, peer);
+  }
+
+  // The peer's own stats can hide its address behind a peer-reflexive candidate,
+  // so each side also tells the other which address it sees for itself.
+  function armLanTimer(remote: RemoteSession) {
+    if (remote.lanTimer !== null) return;
+    remote.lanTimer = window.setTimeout(() => {
+      remote.lanTimer = null;
+      if (remote.verified || remote.status === "blocked" || !remote.ownLocal) return;
+      blockLan(remote, remote.ownLocal, remote.peerLocal ?? { type: "unknown", address: null });
+    }, 6_000);
+  }
+
   async function verifyLan(remote: RemoteSession, pc: RTCPeerConnection) {
     try {
       const stats = await pc.getStats();
@@ -405,17 +467,20 @@ export default function AirShareApp() {
         },
         remote.remoteCandidates,
       );
+      if (remote.pc !== pc) return;
 
-      if (!isLanConnection(local, remoteCandidate)) {
-        remote.status = "blocked";
-        remote.detail = `AirShare stopped this connection because the two devices did not appear to share a local network (${describeCandidate(local)} ↔ ${describeCandidate(remoteCandidate)}).`;
-        closePc(remote);
-        syncPeers();
+      remote.ownLocal = local;
+      sendLanReport(remote);
+
+      if (isLanConnection(local, remoteCandidate)) {
+        remote.verified = true;
+        maybeConnected(remote);
         return;
       }
 
-      remote.verified = true;
-      maybeConnected(remote);
+      resolveLanWithPeer(remote);
+      if (remote.status === "blocked" || remote.verified) return;
+      armLanTimer(remote);
     } catch {
       remote.status = "failed";
       remote.detail = "AirShare could not confirm that both devices are on the same network.";
@@ -431,6 +496,7 @@ export default function AirShareApp() {
     channel.onopen = () => {
       if (remote.dc !== channel) return;
       remote.channelReady = true;
+      sendLanReport(remote);
       maybeConnected(remote);
     };
     channel.onclose = () => {
@@ -975,6 +1041,16 @@ export default function AirShareApp() {
         if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return;
         message = parsed as Record<string, unknown>;
       } catch {
+        return;
+      }
+
+      if (message.type === "lan" && message.candidate && typeof message.candidate === "object") {
+        const raw = message.candidate as Record<string, unknown>;
+        const type = typeof raw.type === "string" ? raw.type.slice(0, 32) : "";
+        const address = typeof raw.address === "string" ? raw.address.slice(0, 128) : null;
+        if (!type) return;
+        remote.peerLocal = { type, address };
+        resolveLanWithPeer(remote);
         return;
       }
 

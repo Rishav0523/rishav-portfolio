@@ -100,6 +100,24 @@ describe("LAN candidate checks", () => {
     ).toBe(false);
     expect(isLanConnection({ type: "host", address: "" }, { type: "host", address: "" })).toBe(false);
   });
+
+  it("accepts peer-reflexive candidates but not relayed ones", () => {
+    expect(
+      isLanConnection(
+        { type: "host", address: "2a02:810d:1234:5678::1" },
+        { type: "prflx", address: "a1b2c3.local" },
+      ),
+    ).toBe(true);
+    expect(
+      isLanConnection(
+        { type: "prflx", address: "2a02:810d:1234:5678::1" },
+        { type: "prflx", address: "2a02:810d:1234:5678::2" },
+      ),
+    ).toBe(true);
+    expect(
+      isLanConnection({ type: "host", address: "10.0.0.2" }, { type: "relay", address: "10.0.0.3" }),
+    ).toBe(false);
+  });
 });
 
 describe("sameSubnet", () => {
@@ -172,6 +190,11 @@ describe("resolveCandidate", () => {
   it("falls back to the exchanged candidate lines when the address is blank", () => {
     const summary = resolveCandidate({ type: "host", address: "", port: 54322, protocol: "udp" }, gathered);
     expect(summary).toEqual({ type: "host", address: "a1b2c3.local" });
+  });
+
+  it("resolves a peer-reflexive candidate by port", () => {
+    const summary = resolveCandidate({ type: "prflx", address: "", port: 54322, protocol: "udp" }, gathered);
+    expect(summary).toEqual({ type: "prflx", address: "a1b2c3.local" });
   });
 
   it("prefers a public match so a suspicious pair is never accepted", () => {

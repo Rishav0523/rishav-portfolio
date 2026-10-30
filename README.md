@@ -139,11 +139,13 @@ How the pieces fit:
 - File bytes never touch the server. They move over an ordered, reliable data channel in 64 KB
   chunks with backpressure; the receiving browser holds them in memory until you save them.
 - After a connection is made, the client inspects the selected candidate pair and republishes the
-  candidate lines the browsers exchanged, because Chrome can blank `getStats()` addresses. Both
-  ends must be host candidates, and the pair must look local: a private, loopback, link-local or
-  mDNS address on either side, or two addresses on the same subnet (the same IPv6 /64, which is how
-  most phones negotiate). Otherwise the connection is stopped. Because no STUN or TURN server
-  exists, a private endpoint cannot be reached from another network in the first place.
+  candidate lines the browsers exchanged, because Chrome can blank `getStats()` addresses. Host and
+  peer-reflexive candidates are both direct (no relay is possible), and the pair must look local: a
+  private, loopback, link-local or mDNS address on either side, or two addresses on the same subnet
+  (the same IPv6 /64, which is how most phones negotiate). When a phone reports the other end as an
+  unnamed peer-reflexive candidate, the two clients also exchange the address each sees for itself
+  and compare those. Otherwise the connection is stopped. Because no STUN or TURN server exists, a
+  private endpoint cannot be reached from another network in the first place.
 - Limits: 8 devices per room, 100 MB per file, 90 s peer expiry, 10 min signal expiry, 30 joins per
   10 min per IP, 120 signals per minute per peer, 64 KB per signal.
 
@@ -228,7 +230,7 @@ email, no phone number, the 2024–2028 degree period and the 8.5 CGPA.
 
 ```bash
 npm run typecheck   # Next app + Worker (separate tsconfigs)
-npm test            # 31 Vitest tests: schema, PBKDF2, sessions, SHA-256, AirShare protocol
+npm test            # 39 Vitest tests: schema, PBKDF2, sessions, SHA-256, AirShare protocol
 npm run test:e2e    # 31 Playwright checks against a running stack
 npm run test:e2e:airshare   # two isolated browser contexts join one PIN room
 cd airshare && npm test   # 8 tests for the optional standalone LAN app
