@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0d1117" />
+    <meta
+      name="description"
+      content="AirShare moves files between devices on the same Wi-Fi. Nothing is uploaded to the internet."
+    />
+    <title>AirShare - local file transfer</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2314b8a6'/%3E%3Cpath d='M8 22l16-7-6-2-2-6-8 15z' fill='%23041014'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 3 10.5 13.5" />
+            <path d="M21 3l-6.5 18-4-8-8-4L21 3z" />
+          </svg>
+        </span>
+        <span class="brand-name">AirShare</span>
+        <span class="brand-tag">LAN only</span>
+      </div>
+      <div id="status" class="status status--connecting" role="status" aria-live="polite">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="statusText">Connecting…</span>
+      </div>
+    </header>
+
+    <main id="main" class="layout">
+      <section class="panel panel--identity" aria-labelledby="identityHeading">
+        <h2 id="identityHeading">This device</h2>
+
+        <label class="field-label" for="nameInput">Device name</label>
+        <div class="name-row">
+          <input
+            id="nameInput"
+            type="text"
+            maxlength="40"
+            autocomplete="off"
+            spellcheck="false"
+            aria-describedby="nameHint"
+          />
+          <button id="saveName" class="btn btn--ghost" type="button" hidden>Save</button>
+        </div>
+        <p id="nameHint" class="hint">Shown to other devices on your Wi-Fi.</p>
+
+        <div class="divider" role="presentation"></div>
+
+        <div class="section-heading">
+          <h2>Devices online</h2>
+          <span id="peerCount" class="count">0</span>
+        </div>
+        <ul id="peerList" class="peer-list"></ul>
+        <p id="noPeers" class="empty">
+          No other devices yet. Open <span id="shareUrl" class="mono">this address</span> on a phone or
+          laptop connected to the same Wi-Fi.
+        </p>
+      </section>
+
+      <section class="panel panel--send" aria-labelledby="sendHeading">
+        <h2 id="sendHeading">Send files</h2>
+        <div
+          id="dropzone"
+          class="dropzone"
+          role="button"
+          tabindex="0"
+          aria-label="Choose files to send"
+          aria-describedby="dropHint"
+        >
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 16V4" />
+            <path d="m7 9 5-5 5 5" />
+            <path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4" />
+          </svg>
+          <p class="dropzone-title"><strong>Choose files</strong> or drop them here</p>
+          <p id="dropHint" class="hint">Up to 500 MB per file · sent over your Wi-Fi only</p>
+          <input id="fileInput" type="file" multiple hidden />
+        </div>
+        <ul id="outgoing" class="file-list" aria-live="polite"></ul>
+      </section>
+
+      <section class="panel panel--messages" aria-labelledby="messagesHeading">
+        <div class="section-heading">
+          <h2 id="messagesHeading">Messages</h2>
+          <button id="clearMessages" class="link-btn" type="button" hidden>Clear</button>
+        </div>
+        <ul id="messages" class="messages" aria-live="polite"></ul>
+        <p id="noMessages" class="empty">Send a link or a quick note to every device online.</p>
+        <form id="textForm" class="text-row" autocomplete="off">
+          <label class="visually-hidden" for="textInput">Message</label>
+          <input id="textInput" type="text" maxlength="4000" placeholder="Type a message…" />
+          <button class="btn" type="submit">Send</button>
+        </form>
+      </section>
+
+      <section class="panel panel--received" aria-labelledby="receivedHeading">
+        <h2 id="receivedHeading">Received files</h2>
+        <ul id="incoming" class="file-list" aria-live="polite"></ul>
+        <p id="noIncoming" class="empty">
+          Files you receive appear here. They live in this tab only — nothing is stored on the server.
+        </p>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>
+        Files travel through this computer on your local network. No account, no cloud, no tracking.
+        Keep this tab open while transferring.
+      </p>
+    </footer>
+
+    <div id="toasts" class="toasts" aria-live="assertive" aria-atomic="false"></div>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

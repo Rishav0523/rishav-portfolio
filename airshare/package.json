@@ -1,0 +1,17 @@
+{
+  "name": "airshare",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LAN-only file transfer between devices on the same Wi-Fi.",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/airshare.test.js"
+  },
+  "dependencies": {
+    "ws": "^8.22.0"
+  }
+}
