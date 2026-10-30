@@ -9,7 +9,7 @@ repository root in Git Bash (PowerShell works too unless noted).
 |---|---|
 | Worker | `rishav-portfolio`, custom domain `rishavprasad.in` |
 | Static assets | `./out`, `run_worker_first` for `/api/*` and `/media/*` |
-| D1 database | `rishav-portfolio`, id `e3c63392-6892-402f-8bdd-70b379fbc664`, migration `0001_init.sql` applied |
+| D1 database | `rishav-portfolio`, id `e3c63392-6892-402f-8bdd-70b379fbc664`, migrations `0001_init.sql` and `0002_airshare.sql` applied |
 | Turnstile widget | `rishav-portfolio contact`, sitekey `0x4AAAAAAFtJIYt…` (full key in `lib/site.ts`), domains `rishavprasad.in`, `www.rishavprasad.in`, `localhost` |
 | CI | `.github/workflows/deploy.yml` deploys on push, manual run, and `content-published` dispatch |
 | GitHub secrets | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` |
@@ -163,6 +163,21 @@ workflow manually, or using **Publish** in the admin dashboard.
 `wrangler.jsonc` attaches `rishavprasad.in` as a custom domain; the zone must be active in the same
 account. `www` redirects to the apex through a dashboard **Redirect Rule** (`301`, preserve query),
 not `_redirects`, because Workers static assets only accept relative destinations there.
+
+### AirShare after a deploy
+
+`/airshare/app/` uses `/api/airshare/*` and the D1 tables from `0002_airshare.sql`; it needs no
+secret or extra binding. After deploying:
+
+1. Open `https://rishavprasad.in/airshare/app/` and create a room. A PIN should appear.
+2. Run the automated check against production (read-only apart from its own room):
+
+   ```bash
+   E2E_BASE=https://rishavprasad.in npm run test:e2e:airshare
+   ```
+
+3. On two real devices on the same Wi-Fi, join with the same PIN and confirm "Connected on this
+   Wi-Fi" on both, then send a file in each direction.
 
 ## 6. Local full-stack development
 

@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { defaultContent, type ContentDoc } from "../lib/content";
+import airshare from "./airshare";
 import { createSession, sha256Hex, verifyPassword, verifySession } from "./auth";
 import { validateContent } from "./content-schema";
 import type { Env } from "./env";
@@ -180,6 +181,8 @@ app.post("/api/contact", async (c) => {
 });
 
 const admin = new Hono<{ Bindings: Env }>();
+
+app.route("/api/airshare", airshare);
 
 admin.post("/login", async (c) => {
   if (!c.env.ADMIN_PASSWORD_HASH || !c.env.SESSION_SECRET) {

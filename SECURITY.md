@@ -4,7 +4,8 @@
 
 This covers two separate systems in this repository:
 
-1. The public site and its API at `https://rishavprasad.in` (Cloudflare Workers + D1).
+1. The public site and its API at `https://rishavprasad.in` (Cloudflare Workers + D1), including the
+   browser AirShare app at `/airshare/app/`.
 2. The optional **AirShare** LAN app in `airshare/` (Node.js + WebSocket), which is never deployed
    on the public domain.
 
@@ -102,7 +103,34 @@ never logged:
 
 ---
 
-## AirShare
+## AirShare (browser app)
+
+`/airshare/app/` pairs two browsers with a shared PIN. The Worker only stores presence and
+signaling; file contents never pass through it.
+
+- **Room ids are derived, not listed.** The id is `sha256("airshare:v1:" + PIN)`. The PIN itself is
+  never stored or returned, and there is no endpoint that lists rooms or members.
+- **The PIN is the only gate.** It is 6–10 digits (8 generated). Anyone on the network who has it can
+  join, and device names are self-declared. Share PINs in person and leave the room afterwards.
+- **Peers are ephemeral.** Rows expire after 90 seconds without a heartbeat; signals expire after
+  10 minutes; leaving deletes both. Nothing is persisted beyond that.
+- **Rate limits:** 30 joins per 10 minutes per IP hash, 120 signals per minute per peer, 8 peers per
+  room, 64 KB signal payload cap. Signaling is validated to SDP and ICE shapes only.
+- **Direct, encrypted transport.** Data channels use DTLS, and no STUN or TURN server is configured,
+  so media cannot be relayed. The app checks the selected candidate pair against the ICE candidate
+  lines the browsers exchanged and closes the connection unless both ends are private, loopback,
+  link-local, or `.local` addresses.
+- **Passwords and secrets:** AirShare uses no account and no cookies; the admin session cookie is
+  not involved.
+- **Limits:** 100 MB per file, 8 devices per room, memory-only transfers, no resume after a drop.
+
+Residual risks: a PIN can be guessed if it is short and the attacker is on the same network (the
+join limit slows but does not stop this); a compromised browser on either end can read what it
+receives; and browser support for WebRTC data channels is required on both devices.
+
+---
+
+## AirShare (optional Node app)
 
 AirShare is deliberately simple and deliberately unsafe on untrusted networks. Read its
 [README](airshare/README.md) before using it.
