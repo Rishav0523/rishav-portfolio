@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "rishav-portfolio",
+  "compatibility_date": "2026-10-01",
+
+  // Static export lives in ./out after `npm run build`.
+  // Requests for these files never invoke a Worker and are free/unlimited.
+  "assets": {
+    "directory": "./out",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
+  },
+
+  // Attach the production domain. Requires the zone to be active on this account.
+  // Remove this block if you prefer to attach the domain from the dashboard.
+  "routes": [{ "pattern": "rishavprasad.in", "custom_domain": true }]
+}
