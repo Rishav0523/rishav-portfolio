@@ -67,18 +67,29 @@ Do not reuse the sitekey as the secret. The sitekey is public and lives in `lib/
 
 ### 3.3 Admin password hash
 
-Pick a long, unique password (16+ characters; do not reuse any other password):
+Pick a long, unique password (16+ characters; do not reuse any other password). Run the script on
+its own first and confirm it prints a line starting with `pbkdf2_sha256$100000$`:
 
 ```bash
-node scripts/hash-password.mjs "<your password>" | npx wrangler secret put ADMIN_PASSWORD_HASH
+node scripts/hash-password.mjs "<your password>"
 ```
+
+Then set the secret and paste that line at the prompt:
+
+```bash
+npx wrangler secret put ADMIN_PASSWORD_HASH
+```
+
+Do not pipe the script straight into `wrangler secret put`. If the script refuses the password, the
+pipe delivers nothing and Workers stores an **empty** secret, which the site reports as "Admin
+login is not configured yet." even though the secret name appears in `wrangler secret list`.
 
 The script prints only `pbkdf2_sha256$100000$<salt>$<hash>`; the plaintext never touches disk. The
 iteration count is fixed at 100,000 because Workers refuses PBKDF2 above that limit — a hash made at
 210,000 (the script's older default) is rejected and sign-in returns "Invalid credentials." If
 the shell records the command in history, clear that entry afterwards (`history -d <n>` in Bash).
-To change the password later, repeat this command with a new password. To force every session out,
-rotate `SESSION_SECRET` as well.
+To change the password later, repeat these commands with a new password. To force every session
+out, rotate `SESSION_SECRET` as well.
 
 ### 3.4 Publish token (optional, needed for the Publish button)
 
