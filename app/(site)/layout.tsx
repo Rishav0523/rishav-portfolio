@@ -4,7 +4,7 @@ import Footer from "@/components/site/footer";
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <a href="#main" className="skip-link">
+      <a href="#main" className="skip-link print-hide">
         Skip to content
       </a>
       <div className="flex min-h-dvh flex-col">

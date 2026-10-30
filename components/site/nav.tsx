@@ -45,7 +45,7 @@ export default function Nav() {
     <>
       <header
       className={cn(
-        "sticky top-0 z-50 border-b transition-colors duration-300",
+        "sticky top-0 z-50 border-b transition-colors duration-300 print-hide",
         scrolled || open
           ? "border-[var(--line)] bg-[var(--nav)] backdrop-blur-xl"
           : "border-transparent bg-transparent",

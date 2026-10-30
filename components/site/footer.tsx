@@ -5,7 +5,7 @@ import SocialLinks from "./social-links";
 
 export default function Footer() {
   return (
-    <footer className="border-t border-[var(--line)] bg-[var(--tint-soft)]">
+    <footer className="print-hide border-t border-[var(--line)] bg-[var(--tint-soft)]">
       <div className="container-page grid gap-10 py-14 md:grid-cols-[1.4fr_1fr_1fr]">
         <div className="max-w-sm">
           <div className="flex items-center gap-2.5">

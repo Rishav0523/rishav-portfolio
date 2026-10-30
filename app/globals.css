@@ -398,3 +398,123 @@
     opacity: 0;
   }
 }
+
+/* Resume printing: a clean, light, single-flow document regardless of theme. */
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  :root,
+  .dark {
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --card: #ffffff;
+    --ink: #111111;
+    --muted: #333333;
+    --line: #d9d9d9;
+    --line-strong: #b3b3b3;
+    --link: #111111;
+    --tint: #ffffff;
+    --tint-soft: #ffffff;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #111111 !important;
+  }
+
+  .print-hide,
+  .skip-link,
+  .bg-grid {
+    display: none !important;
+  }
+
+  .hero-glow::before {
+    display: none !important;
+  }
+
+  .container-page {
+    max-width: none !important;
+    padding-inline: 0 !important;
+  }
+
+  .section {
+    padding-block: 0 !important;
+  }
+
+  .card,
+  .chip,
+  .icon-tile,
+  .eyebrow {
+    box-shadow: none !important;
+  }
+
+  .card {
+    border-radius: 0.5rem;
+  }
+
+  a {
+    color: #111111 !important;
+    text-decoration: none !important;
+  }
+
+  .resume-hero {
+    padding-block: 0 !important;
+  }
+
+  .resume-hero .container-page {
+    padding-block: 0 !important;
+  }
+
+  .resume-hero {
+    margin-bottom: 0.5rem !important;
+  }
+
+  .resume-break {
+    break-before: page;
+  }
+
+  .resume-hero h1 {
+    font-size: 2rem !important;
+  }
+
+  .resume-body {
+    max-width: none !important;
+  }
+
+  .resume-row {
+    display: grid !important;
+    grid-template-columns: 8.5rem 1fr !important;
+    gap: 1.25rem !important;
+    padding-block: 0.4rem !important;
+    break-inside: avoid;
+  }
+
+  .resume-row h2 {
+    font-size: 0.6rem !important;
+  }
+
+  .resume-row h3 {
+    font-size: 0.84rem !important;
+  }
+
+  .resume-row p,
+  .resume-row li {
+    font-size: 0.76rem !important;
+    line-height: 1.5 !important;
+  }
+
+  .resume-row .space-y-5 > * + * {
+    margin-top: 0.55rem !important;
+  }
+
+  .resume-row .space-y-4 > * + * {
+    margin-top: 0.45rem !important;
+  }
+
+  .resume-row .space-y-3 > * + * {
+    margin-top: 0.35rem !important;
+  }
+}

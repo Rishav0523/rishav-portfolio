@@ -188,6 +188,82 @@ export const journey = [
   },
 ] as const;
 
+export type ProjectStatus = "In development" | "Shipped";
+
+export type Project = {
+  slug: string;
+  title: string;
+  status: ProjectStatus;
+  summary: string;
+  detail: string;
+  stack: string[];
+  links?: { label: string; href: string }[];
+};
+
+export const projects: Project[] = [
+  {
+    slug: "online-examination-and-proctoring-system",
+    title: "Online Examination and Proctoring System",
+    status: "In development",
+    summary:
+      "A web-based examination platform with proctoring, built on HTML, CSS, JavaScript and MySQL.",
+    detail:
+      "The backend and final implementation details are still being finalised. Features, screenshots and links will be added here once the build is complete.",
+    stack: ["HTML", "CSS", "JavaScript", "MySQL"],
+  },
+];
+
+export type Achievement = {
+  title: string;
+  category: "Leadership" | "Event organising";
+  role: string;
+  period: string;
+  detail: string;
+};
+
+export const achievements: Achievement[] = [
+  {
+    title: "Illuminate 2026",
+    category: "Event organising",
+    role: "Joint Secretary · E-Cell CGEC",
+    period: "2026",
+    detail: "Contributed to organising an entrepreneurship workshop run with E-Cell IIT Bombay.",
+  },
+  {
+    title: "Smart India Hackathon 2026 — institutional round",
+    category: "Event organising",
+    role: "Overall Coordinator",
+    period: "2026",
+    detail:
+      "Coordinated the preliminary pitching round, participant communication, scheduling and event operations.",
+  },
+  {
+    title: "Tech-O-Nicks technical programme",
+    category: "Leadership",
+    role: "In-Charge · Tech-O-Nicks",
+    period: "2026 – Present",
+    detail:
+      "Contributed to the club's induction programme and technical workshops, and guides the extended core team.",
+  },
+];
+
+export type Certification = {
+  title: string;
+  issuer: string;
+  year: string;
+  href?: string;
+};
+
+export const certifications: Certification[] = [];
+
+export const resumeSummary =
+  "Third-year Computer Science and Engineering student at Cooch Behar Government Engineering College, building for the web and coordinating technical communities. Currently developing an online examination and proctoring system, and serving as Joint Secretary of E-Cell CGEC and In-Charge of Tech-O-Nicks.";
+
+export const resumePdf = {
+  href: "/resume/rishav-prasad-resume.pdf",
+  approvedForPublish: false,
+} as const;
+
 export const profileFacts = [
   { label: "Studying", value: "B.Tech CSE · 3rd year" },
   { label: "CGPA", value: "8.5 / 10" },

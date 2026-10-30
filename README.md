@@ -7,10 +7,10 @@ The site is a **fully static export** hosted on Cloudflare's free plan. A separa
 local-network file transfer app (**AirShare**) will live in `airshare/` and never affects the
 public site.
 
-**Status: Gate 2 of 6** — design system, navigation, home page, live deployment to
-`https://rishavprasad.in` with auto-deploy from `main`, plus the complete identity layer: About,
-`/education`, `/skills`, the leadership timeline, portrait photography and social profiles.
-Remaining gates add projects, the admin dashboard, and AirShare.
+**Status: Gate 3 of 6** — design system, navigation, home page, live deployment to
+`https://rishavprasad.in` with auto-deploy from `main`, the identity layer (About, Education, Skills,
+Experience), and the working record: Projects, Achievements & Certifications, and a printable
+Resume. Remaining gates add the admin dashboard and AirShare.
 
 ---
 
@@ -123,18 +123,24 @@ app/
     education/       B.Tech + two CBSE board results
     skills/          skill groups and areas of interest
     experience/      leadership timeline
-    projects/ achievements/ resume/ airshare/ contact/
+    projects/        real projects with their status (one in development)
+    achievements/    leadership/event achievements; awards and certifications
+    resume/          on-page resume, print/save as PDF, gated PDF download
+    airshare/ contact/
   layout.tsx         fonts, metadata, JSON-LD, theme bootstrap
   globals.css        Summer Dream tokens + component classes
   not-found.tsx      404 page
   sitemap.ts robots.ts
 components/site/     nav, footer, theme toggle, typing roles, timeline,
-                     social links/icons, upcoming page
+                     social links/icons, empty state, print button, upcoming page
 components/static-link.tsx  plain <a> wrapper (see note below)
 lib/site.ts          site identity, navigation, focus areas
-lib/content.ts       education, skills, leadership, journey, socials
+lib/content.ts       education, skills, leadership, journey, socials, projects,
+                     achievements, certifications, resume copy and PDF gate
+lib/resume.ts        build-time check for an approved PDF
 lib/icons.tsx        icon-name → lucide component map
 public/images/       portrait.jpg + about-portrait.jpg (1200×1500), og.jpg (1200×630)
+public/resume/       approved PDF goes here (intentionally empty)
 public/              favicon, _headers
 wrangler.jsonc       Cloudflare configuration
 ```
@@ -162,8 +168,9 @@ utilities always override them.
 Until the admin dashboard ships in Gate 4, content is edited in source:
 
 - **`lib/content.ts`** — the single factual source for education entries, skill groups, areas of
-  interest, leadership roles, the journey timeline, profile facts and social URLs. Every page reads
-  from it, so one edit updates About, Education, Skills, Experience and the home page together.
+  interest, leadership roles, the journey timeline, profile facts, social URLs, projects,
+  achievements, certifications and the resume summary. Every page reads from it, so one edit updates
+  all of them together.
 - **`lib/site.ts`** — identity, navigation and focus areas.
 - **`app/(site)/**/page.tsx`** — page-specific headings and prose.
 
@@ -174,6 +181,37 @@ Two photographs are used, deliberately different per page: `portrait.jpg` (hillt
 so the figure fills the hero) on the home page, and `about-portrait.jpg` (indoor portrait) on
 `/about/`. Both are 4:5 crops re-encoded at 1200×1500 from the 3000×4000 originals.
 `og.jpg` is a 1200×630 share card from the hilltop shoot. Replace all three if the photos change.
+
+### Resume PDF publication gate
+
+The /resume/ page always renders the current resume from `lib/content.ts` and can be printed to PDF.
+A downloadable PDF is published only when **both** conditions hold:
+
+1. `public/resume/rishav-prasad-resume.pdf` exists;
+2. `resumePdf.approvedForPublish` is `true` in `lib/content.ts`.
+
+`lib/resume.ts` checks both at build time, so an unapproved file cannot leak: with the flag false no
+link is rendered at all. The earlier PDFs are reference documents and are deliberately **not** in
+`public/`. To publish a new export: replace the file, flip the flag, commit, and the deploy adds
+View/Download buttons with the file size.
+
+### Resume data review (Gate 3 input)
+
+Two older PDFs were supplied as reference only. Nothing from them was published. Where they agree
+with the site they add nothing; where they disagree, the site keeps the information you supplied
+later. Items still waiting on your decision:
+
+| Field | Old PDF | Site now | Status |
+|---|---|---|---|
+| Email | `prasadrishav959@gmail.com` | `rishav81cse@gmail.com` | **Needs confirmation** |
+| Phone | `+91 747 905 9885` | not published | Needs permission |
+| Degree period | 2023 – 2027 | 2024 – 2028 (expected) | Site value is the correction |
+| CGPA | 8.49 | 8.5 | Confirm rounding |
+| E-Cell / Tech-O-Nicks dates | 2025 | 2026 | Site value is the correction |
+| IIC, CGEC Times roles | listed | not published | Supply details if current |
+| Projects (old set) | several completed builds | only the in-development proctoring system | Not published without your go-ahead |
+| Awards | medals and rankings | none | Not published: no verified source supplied |
+| Skills | wider list | supplied set only | Add any missing skills you want shown |
 
 ### Navigation uses plain anchors on purpose
 
@@ -191,8 +229,12 @@ load, which is what a mostly-static site wants. Use this `Link` for internal lin
 - `npm run typecheck` — TypeScript
 - `npm run build` — production static build (14 routes at this gate)
 - Responsive checks were run in Chromium at 320, 375, 425, 768, 1024, 1280, 1440 and 1920 px across
-  `/`, `/about/`, `/education/`, `/skills/` and `/experience/`: horizontal overflow is zero at every
-  width, and the desktop nav only appears at ≥1280 px.
+  `/`, `/about/`, `/education/`, `/skills/`, `/experience/`, `/projects/`, `/achievements/` and
+  `/resume/`: horizontal overflow is zero at every width, and the desktop nav only appears at
+  ≥1280 px.
+- Gate 3 checks: with the PDF gate closed there are **no** `.pdf` links in the DOM on `/resume/`; the
+  page prints to a 2-page A4 document with the nav, footer, actions and notice removed; the
+  projects/achievements pages render their empty states when their arrays are empty.
 - Dark mode, the mobile menu (open, link visibility, Escape to close), the 404 route, and the
   portrait asset (`naturalWidth 1200`) were checked in the same pass. Screenshots are taken with
   `animations: "disabled"`, because the entrance animations use `fill: both` and otherwise capture
@@ -207,10 +249,18 @@ load, which is what a mostly-static site wants. Use this `Link` for internal lin
 
 ## Known limitations at this gate
 
-- Projects, Achievements, Resume, AirShare and Contact are **explicitly labelled as in progress** —
-  no fake content is presented as finished.
-- No admin dashboard, contact form backend or AirShare app yet (Gates 4–6); content is edited in
-  source until then.
+- AirShare and Contact are **explicitly labelled as in progress** — no fake content is presented as
+  finished.
+- The admin dashboard, contact form backend and AirShare app arrive in Gates 4–6; content is edited
+  in source until then.
+- One project is listed, marked **In development**; its backend and final details are not settled,
+  so it has no feature list, screenshots or links yet.
+- No awards or certifications are published: the supplied older resumes mention competition results
+  and courses, but none are listed until their certificates or official results are confirmed.
+- No resume PDF is downloadable yet; the outdated PDFs stay out of `public/` until a current export
+  is approved.
+- The resume page's contact block uses the site email and location, not the phone number or the
+  second email address found in the older PDFs; those remain unpublished.
 - Social links point to public profiles; the Instagram handle is the personal account supplied, not
   a portfolio-only account.
 - Motion is global: `prefers-reduced-motion` collapses every animation and transition to ~0 ms and
@@ -224,13 +274,20 @@ load, which is what a mostly-static site wants. Use this `Link` for internal lin
 1. **Gate 1 — foundation** (done): scaffold, design system, nav, home shell, deploy-ready build.
 2. **Gate 2 — identity** (done): About, `/education`, `/skills`, leadership timeline, portrait, OG
    image and social profiles.
-3. **Gate 3**: Projects (search/filter/detail), achievements, resume.
-4. **Gate 4**: Hono API on Workers, D1, admin dashboard, media uploads, contact form.
+3. **Gate 3 — record** (done): `/projects`, `/achievements`, `/resume` built from supplied facts,
+   empty states for missing records, on-page resume with Print / Save as PDF, PDF publication gate.
+4. **Gate 4**: Hono API on Workers, D1, admin dashboard (CRUD for projects, achievements,
+   certifications, resume), media uploads (R2), contact form.
 5. **Gate 5**: AirShare LAN app + public explainer page.
 6. **Gate 6**: hardening, tests, full deployment documentation, production checklist.
 
 ## Needed from you
 
-- Resume PDF
-- Project entries: name, description, stack, links, screenshots
-- Any certifications/achievements with dates and files
+- **Resume PDF**: replace the outdated file, then set `approvedForPublish: true` in `lib/content.ts`.
+  Until then `/resume/` offers Print / Save as PDF only.
+- **Projects**: name, one-line summary, description, stack, links and screenshots for each new
+  project — add them to the `projects` array.
+- **Certifications**: title, issuer, year and, if you want it linked, the public certificate URL.
+- **Awards**: only verified ones, with the issuing body and date.
+- Confirmation of the two contradictory contact details found in the old PDFs (see "Resume data
+  review" above).
