@@ -6,10 +6,12 @@ function base64UrlEncode(bytes: Uint8Array): string {
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-function base64UrlDecode(value: string): Uint8Array {
+function base64UrlDecode(value: string): Uint8Array<ArrayBuffer> {
   const padded = value.replace(/-/g, "+").replace(/_/g, "/");
   const binary = atob(padded + "=".repeat((4 - (padded.length % 4)) % 4));
-  return Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return bytes;
 }
 
 function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
@@ -27,8 +29,8 @@ export async function verifyPassword(password: string, stored: string): Promise<
   const iterations = Number.parseInt(parts[1], 10);
   if (!Number.isFinite(iterations) || iterations < 100_000 || iterations > 1_000_000) return false;
 
-  let salt: Uint8Array;
-  let expected: Uint8Array;
+  let salt: Uint8Array<ArrayBuffer>;
+  let expected: Uint8Array<ArrayBuffer>;
   try {
     salt = base64UrlDecode(parts[2]);
     expected = base64UrlDecode(parts[3]);
