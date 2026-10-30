@@ -7,8 +7,10 @@ The site is a **fully static export** hosted on Cloudflare's free plan. A separa
 local-network file transfer app (**AirShare**) will live in `airshare/` and never affects the
 public site.
 
-**Status: Gate 1 of 6** — design system, navigation, home page and a production build. Remaining
-gates add full content sections, the admin dashboard, and AirShare.
+**Status: Gate 2 of 6** — design system, navigation, home page, live deployment to
+`https://rishavprasad.in` with auto-deploy from `main`, plus the complete identity layer: About,
+`/education`, `/skills`, the leadership timeline, portrait photography and social profiles.
+Remaining gates add projects, the admin dashboard, and AirShare.
 
 ---
 
@@ -72,16 +74,16 @@ The domain must be an active zone in the same Cloudflare account. Because the zo
 Cloudflare DNS, the custom domain and its certificate are attached automatically — no A record and
 no manual SSL setup.
 
-`www` is **not** redirected by the static asset config: Workers static assets only accept relative
-rules in `_redirects`, and a cross-host rule fails with `Only relative URLs are allowed (100324)`.
-Add the redirect in the dashboard instead (free plan):
+`www` **is** redirected, via a dashboard rule rather than `_redirects`: Workers static assets only
+accept relative destinations there, and a cross-host rule fails with `Only relative URLs are
+allowed (100324)`. The live configuration is:
 
-1. Rules → Redirect Rules → Create rule
+1. Rules → Redirect Rules → `www` to apex
 2. Request URL: `https://www.rishavprasad.in/*`
 3. Target: `https://rishavprasad.in/${1}` (dynamic expression `concat("/", http.request.uri.path)`)
-4. Status: `301`
+4. Status: `301`, preserve query string
 
-If the `www` hostname is never used, skip this — nothing breaks.
+Verified: `/about/` → `https://rishavprasad.in/about/`, and `?q=test` survives the hop.
 
 ### Automatic deploys from GitHub
 
@@ -98,8 +100,12 @@ Then add two repository secrets (Settings → Secrets and variables → Actions)
 
 | Secret | Value |
 |---|---|
-| `CLOUDFLARE_API_TOKEN` | API token with **Workers Scripts: Edit** and **Account Settings: Read** |
-| `CLOUDFLARE_ACCOUNT_ID` | Found in the Cloudflare dashboard sidebar |
+| `CLOUDFLARE_API_TOKEN` | From the **Edit Cloudflare Workers** template, with Zone Resources scoped to `rishavprasad.in` |
+| `CLOUDFLARE_ACCOUNT_ID` | Account ID shown by `npx wrangler whoami` |
+
+The workflow runs the Wrangler pinned in `package-lock.json` (not a version bundled by an action),
+so CI uses the exact binary that works locally. If a step fails, Wrangler's output is written to the
+run summary.
 
 `.github/workflows/deploy.yml` runs typecheck → build → deploy on every push to `main`, and can
 also be triggered manually or by a `content-published` repository dispatch (used by the admin
@@ -113,14 +119,22 @@ dashboard in Gate 4).
 app/
   (site)/            public pages sharing the site layout
     page.tsx         home
-    about/ projects/ experience/ achievements/ resume/ airshare/ contact/
+    about/           portrait, bio, principles, journey timeline
+    education/       B.Tech + two CBSE board results
+    skills/          skill groups and areas of interest
+    experience/      leadership timeline
+    projects/ achievements/ resume/ airshare/ contact/
   layout.tsx         fonts, metadata, JSON-LD, theme bootstrap
   globals.css        Summer Dream tokens + component classes
   not-found.tsx      404 page
   sitemap.ts robots.ts
-components/site/     nav, footer, theme toggle, typing roles, upcoming page
+components/site/     nav, footer, theme toggle, typing roles, timeline,
+                     social links/icons, upcoming page
 components/static-link.tsx  plain <a> wrapper (see note below)
 lib/site.ts          site identity, navigation, focus areas
+lib/content.ts       education, skills, leadership, journey, socials
+lib/icons.tsx        icon-name → lucide component map
+public/images/       portrait.jpg (1200×1500), og.jpg (1200×630)
 public/              favicon, _headers
 wrangler.jsonc       Cloudflare configuration
 ```
@@ -145,8 +159,20 @@ utilities always override them.
 
 ## Editing content (temporary)
 
-Until the admin dashboard ships in Gate 4, site identity and navigation live in `lib/site.ts`.
-Page copy lives in the corresponding `app/(site)/**/page.tsx`.
+Until the admin dashboard ships in Gate 4, content is edited in source:
+
+- **`lib/content.ts`** — the single factual source for education entries, skill groups, areas of
+  interest, leadership roles, the journey timeline, profile facts and social URLs. Every page reads
+  from it, so one edit updates About, Education, Skills, Experience and the home page together.
+- **`lib/site.ts`** — identity, navigation and focus areas.
+- **`app/(site)/**/page.tsx`** — page-specific headings and prose.
+
+Education results, CGPA and leadership contributions are stored exactly as supplied; proficiency
+percentages are deliberately not modelled, and the Skills page says so.
+
+The portrait at `public/images/portrait.jpg` is the supplied photograph, cropped to 4:5 and
+compressed from the 3000×4000 original. `public/images/og.jpg` is the same photograph rendered on a
+1200×630 share card. Replace both if the photo changes.
 
 ### Navigation uses plain anchors on purpose
 
@@ -162,32 +188,41 @@ load, which is what a mostly-static site wants. Use this `Link` for internal lin
 ## Testing
 
 - `npm run typecheck` — TypeScript
-- `npm run build` — production static build
-- Responsive checks were run in Chromium at 320, 375, 768 and 1440 px, plus dark mode, the mobile
-  menu (open, link visibility, Escape to close) and the 404 route.
+- `npm run build` — production static build (14 routes at this gate)
+- Responsive checks were run in Chromium at 320, 375, 425, 768, 1024, 1280, 1440 and 1920 px across
+  `/`, `/about/`, `/education/`, `/skills/` and `/experience/`: horizontal overflow is zero at every
+  width, and the desktop nav only appears at ≥1280 px.
+- Dark mode, the mobile menu (open, link visibility, Escape to close), the 404 route, and the
+  portrait asset (`naturalWidth 1200`) were checked in the same pass. Screenshots are taken with
+  `animations: "disabled"`, because the entrance animations use `fill: both` and otherwise capture
+  mid-fade even when computed styles report full opacity.
 - Production was checked against the live domain at the edge (Chromium pinned to the Cloudflare
   address): `/`, every nav route, `/sitemap.xml`, `/robots.txt`, `/favicon.svg` all return 200, an
   unknown path returns 404 with the custom page, and the console and network panel are clean.
+- CI was verified end to end: pushing to `main` ran typecheck, build and `wrangler deploy`, and the
+  resulting Worker version replaced the previous one on the custom domain.
 
 ---
 
 ## Known limitations at this gate
 
-- About, Projects, Experience, Achievements, Resume and AirShare are **explicitly labelled as in
-  progress** — no fake content is presented as finished.
-- `/education` and `/skills` are not routed yet; they arrive in Gate 2 along with the content.
-- The portrait is a designed placeholder; no photograph has been supplied yet.
-- No social links yet: handles were not provided, and inventing them would be wrong.
-- No Open Graph image, admin dashboard, contact form backend or AirShare app yet (Gates 4–6).
-- Content is edited in source until Gate 4.
-- `www.rishavprasad.in` still points at an older deployment until the Redirect Rule above is added.
+- Projects, Achievements, Resume, AirShare and Contact are **explicitly labelled as in progress** —
+  no fake content is presented as finished.
+- No admin dashboard, contact form backend or AirShare app yet (Gates 4–6); content is edited in
+  source until then.
+- Social links point to public profiles; the Instagram handle is the personal account supplied, not
+  a portfolio-only account.
+- Motion is global: `prefers-reduced-motion` collapses every animation and transition to ~0 ms and
+  stops the typing loop on "Software Developer", so the page renders fully static for those users.
+- D1, R2 and Cloudflare Access are not provisioned; nothing in the static site depends on them.
 
 ---
 
 ## Roadmap
 
 1. **Gate 1 — foundation** (done): scaffold, design system, nav, home shell, deploy-ready build.
-2. **Gate 2**: About with education timeline, `/education`, `/skills`, leadership experience.
+2. **Gate 2 — identity** (done): About, `/education`, `/skills`, leadership timeline, portrait, OG
+   image and social profiles.
 3. **Gate 3**: Projects (search/filter/detail), achievements, resume.
 4. **Gate 4**: Hono API on Workers, D1, admin dashboard, media uploads, contact form.
 5. **Gate 5**: AirShare LAN app + public explainer page.
@@ -195,8 +230,6 @@ load, which is what a mostly-static site wants. Use this `Link` for internal lin
 
 ## Needed from you
 
-- Portrait photograph (square or portrait, ≥ 1200 px wide)
 - Resume PDF
-- GitHub, LinkedIn and Instagram profile URLs
 - Project entries: name, description, stack, links, screenshots
 - Any certifications/achievements with dates and files

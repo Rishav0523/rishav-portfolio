@@ -1,4 +1,5 @@
 import Link from "@/components/static-link";
+import Image from "next/image";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 import { focusAreas, site } from "@/lib/site";
 import TypingRoles from "@/components/site/typing-roles";
+import SocialLinks from "@/components/site/social-links";
 
 const focusIcons = {
   code: Code2,
@@ -81,6 +83,13 @@ export default function HomePage() {
               </Link>
             </div>
 
+            <div className="animate-rise animate-rise-delay-3 mt-6 flex flex-wrap items-center gap-3">
+              <span className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
+                Find me on
+              </span>
+              <SocialLinks />
+            </div>
+
             <dl className="animate-rise animate-rise-delay-3 mt-10 grid max-w-lg grid-cols-2 gap-x-6 gap-y-5 border-t border-[var(--line)] pt-6 text-sm sm:grid-cols-3">
               <div>
                 <dt className="text-xs uppercase tracking-[0.14em] text-[var(--muted)]">Studying</dt>
@@ -99,26 +108,19 @@ export default function HomePage() {
 
           <div className="relative mx-auto w-full max-w-[21.5rem] px-3 lg:max-w-[24rem] lg:px-2">
             <div
-              className="absolute inset-x-6 inset-y-0 rotate-2 rounded-[2.2rem] bg-[var(--apricot)]/80"
+              className="absolute inset-x-4 -bottom-4 top-4 rotate-2 rounded-[2.2rem] bg-[var(--apricot)]/80"
               aria-hidden
             />
-            <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] border border-[var(--line)] bg-gradient-to-br from-[var(--cerulean)] via-[#0093b4] to-[var(--teal)] shadow-[0_30px_60px_-30px_rgba(0,129,167,0.6)]">
-              <div className="bg-grid absolute inset-0 opacity-25 mix-blend-overlay" aria-hidden />
-              <div
-                className="absolute -right-12 -top-12 h-44 w-44 rounded-full border border-white/20"
-                aria-hidden
+            <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] border border-[var(--line)] bg-[var(--card)] shadow-[0_30px_60px_-30px_rgba(6,60,74,0.45)]">
+              <Image
+                src="/images/portrait.jpg"
+                alt="Rishav Prasad standing at a hilltop viewpoint with clouds and hills behind him"
+                width={1200}
+                height={1500}
+                priority
+                sizes="(min-width: 1024px) 384px, (min-width: 640px) 344px, 86vw"
+                className="h-full w-full object-cover"
               />
-              <div
-                className="absolute -left-10 bottom-28 h-28 w-28 rounded-full bg-[var(--coral)]/25 blur-2xl"
-                aria-hidden
-              />
-              <div className="absolute inset-0 grid place-items-center">
-                <span className="display text-[6rem] font-semibold text-white/90">RP</span>
-              </div>
-              <div className="absolute inset-x-4 bottom-4 rounded-2xl border border-white/25 bg-white/10 px-4 py-3 backdrop-blur-md">
-                <p className="text-sm font-semibold text-white">{site.name}</p>
-                <p className="text-xs text-white/80">Portrait photograph coming soon</p>
-              </div>
             </div>
 
             <div className="absolute -left-2 top-8 hidden -rotate-2 rounded-2xl border border-[var(--line)] bg-[var(--card)] px-4 py-2.5 text-xs shadow-[0_14px_30px_-18px_rgba(6,60,74,0.5)] sm:block">

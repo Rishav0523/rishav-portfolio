@@ -64,7 +64,7 @@ export default function Nav() {
           </span>
         </Link>
 
-        <nav aria-label="Primary" className="hidden items-center gap-1 lg:flex">
+        <nav aria-label="Primary" className="hidden items-center gap-0.5 xl:flex">
           {site.nav.map((item) => {
             const active = pathname === item.href;
             return (
@@ -73,7 +73,7 @@ export default function Nav() {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "relative rounded-full px-3.5 py-2 text-[0.86rem] font-medium transition-colors",
+                  "relative rounded-full px-3 py-2 text-[0.84rem] font-medium transition-colors",
                   active
                     ? "text-[var(--link)]"
                     : "text-[var(--muted)] hover:text-[var(--ink)]",
@@ -82,7 +82,7 @@ export default function Nav() {
                 {item.label}
                 <span
                   className={cn(
-                    "absolute inset-x-3.5 -bottom-0.5 h-[2px] rounded-full bg-[var(--teal)] transition-transform duration-200",
+                    "absolute inset-x-3 -bottom-0.5 h-[2px] rounded-full bg-[var(--teal)] transition-transform duration-200",
                     active ? "scale-x-100" : "scale-x-0",
                   )}
                   aria-hidden
@@ -104,7 +104,7 @@ export default function Nav() {
             aria-expanded={open}
             aria-controls="mobile-menu"
             aria-label={open ? "Close menu" : "Open menu"}
-            className="grid h-10 w-10 place-items-center rounded-full border border-[var(--line)] text-[var(--ink)] transition hover:border-[var(--line-strong)] lg:hidden"
+            className="grid h-10 w-10 place-items-center rounded-full border border-[var(--line)] text-[var(--ink)] transition hover:border-[var(--line-strong)] xl:hidden"
           >
             {open ? (
               <X className="h-5 w-5" aria-hidden />
@@ -119,7 +119,7 @@ export default function Nav() {
       {open && (
         <div
           id="mobile-menu"
-          className="fixed inset-x-0 top-16 bottom-0 z-40 overflow-y-auto border-t border-[var(--line)] bg-[var(--bg)] md:top-[4.5rem] lg:hidden"
+          className="fixed inset-x-0 top-16 bottom-0 z-40 overflow-y-auto border-t border-[var(--line)] bg-[var(--bg)] md:top-[4.5rem] xl:hidden"
         >
           <nav aria-label="Mobile" className="container-page flex flex-col gap-1 py-5">
             {site.nav.map((item) => {

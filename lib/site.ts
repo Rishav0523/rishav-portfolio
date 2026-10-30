@@ -18,7 +18,9 @@ export const site = {
   ],
   nav: [
     { href: "/about", label: "About" },
+    { href: "/education", label: "Education" },
     { href: "/projects", label: "Projects" },
+    { href: "/skills", label: "Skills" },
     { href: "/experience", label: "Experience" },
     { href: "/achievements", label: "Achievements" },
     { href: "/resume", label: "Resume" },

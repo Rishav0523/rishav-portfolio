@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Fraunces, Manrope } from "next/font/google";
 import "./globals.css";
 import { site } from "@/lib/site";
+import { socials } from "@/lib/content";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -43,11 +44,20 @@ export const metadata: Metadata = {
     title: `${site.name} · Developer Portfolio`,
     description: site.description,
     locale: "en_IN",
+    images: [
+      {
+        url: "/images/og.jpg",
+        width: 1200,
+        height: 630,
+        alt: `${site.name} at a hilltop viewpoint`,
+      },
+    ],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: `${site.name} · Developer Portfolio`,
     description: site.description,
+    images: ["/images/og.jpg"],
   },
   icons: {
     icon: "/favicon.svg",
@@ -73,10 +83,11 @@ const personSchema = {
   url: site.url,
   email: `mailto:${site.email}`,
   jobTitle: "Computer Science and Engineering Student · Software Developer",
-  alumniOf: {
+  affiliation: {
     "@type": "CollegeOrUniversity",
     name: site.college,
   },
+  sameAs: socials.map((social) => social.href),
   knowsAbout: [
     "Software Development",
     "Web Development",

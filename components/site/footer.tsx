@@ -1,6 +1,7 @@
 import Link from "@/components/static-link";
 import { Mail } from "lucide-react";
 import { site } from "@/lib/site";
+import SocialLinks from "./social-links";
 
 export default function Footer() {
   return (
@@ -24,6 +25,7 @@ export default function Footer() {
             <Mail className="h-4 w-4" aria-hidden />
             {site.email}
           </a>
+          <SocialLinks className="mt-5" />
         </div>
 
         <nav aria-label="Footer" className="space-y-3">
@@ -39,6 +41,14 @@ export default function Footer() {
                 </Link>
               </li>
             ))}
+            <li>
+              <Link
+                href="/contact"
+                className="text-[var(--muted)] transition-colors hover:text-[var(--ink)]"
+              >
+                Contact
+              </Link>
+            </li>
           </ul>
         </nav>
 
