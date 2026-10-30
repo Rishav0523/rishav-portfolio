@@ -134,7 +134,7 @@ components/static-link.tsx  plain <a> wrapper (see note below)
 lib/site.ts          site identity, navigation, focus areas
 lib/content.ts       education, skills, leadership, journey, socials
 lib/icons.tsx        icon-name → lucide component map
-public/images/       portrait.jpg (1200×1500), og.jpg (1200×630)
+public/images/       portrait.jpg + about-portrait.jpg (1200×1500), og.jpg (1200×630)
 public/              favicon, _headers
 wrangler.jsonc       Cloudflare configuration
 ```
@@ -170,9 +170,10 @@ Until the admin dashboard ships in Gate 4, content is edited in source:
 Education results, CGPA and leadership contributions are stored exactly as supplied; proficiency
 percentages are deliberately not modelled, and the Skills page says so.
 
-The portrait at `public/images/portrait.jpg` is the supplied photograph, cropped to 4:5 and
-compressed from the 3000×4000 original. `public/images/og.jpg` is the same photograph rendered on a
-1200×630 share card. Replace both if the photo changes.
+Two photographs are used, deliberately different per page: `portrait.jpg` (hilltop, cropped tighter
+so the figure fills the hero) on the home page, and `about-portrait.jpg` (indoor portrait) on
+`/about/`. Both are 4:5 crops re-encoded at 1200×1500 from the 3000×4000 originals.
+`og.jpg` is a 1200×630 share card from the hilltop shoot. Replace all three if the photos change.
 
 ### Navigation uses plain anchors on purpose
 

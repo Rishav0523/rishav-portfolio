@@ -64,8 +64,8 @@ export default function AboutPage() {
               />
               <div className="relative overflow-hidden rounded-[1.75rem] border border-[var(--line)] shadow-[0_24px_50px_-28px_rgba(6,60,74,0.55)]">
                 <Image
-                  src="/images/portrait.jpg"
-                  alt="Rishav Prasad standing at a hilltop viewpoint with clouds and hills behind him"
+                  src="/images/about-portrait.jpg"
+                  alt="Rishav Prasad seated in a tan jacket and glasses, looking towards the camera"
                   width={1200}
                   height={1500}
                   sizes="(min-width: 1024px) 380px, (min-width: 640px) 384px, 100vw"
