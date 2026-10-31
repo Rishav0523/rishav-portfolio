@@ -177,6 +177,19 @@ workflow manually, or using **Publish** in the admin dashboard.
 account. `www` redirects to the apex through a dashboard **Redirect Rule** (`301`, preserve query),
 not `_redirects`, because Workers static assets only accept relative destinations there.
 
+### Zone settings (dashboard, not in this repository)
+
+These are account-level toggles that Wrangler cannot set from here. Check them after any account
+change:
+
+1. **SSL/TLS → Overview**: mode **Full (strict)**.
+2. **SSL/TLS → Edge Certificates**: **Always Use HTTPS** on. On 2026-10-31 `http://rishavprasad.in/`
+   still answered `200` instead of redirecting, so this was off.
+3. **DNS → Settings**: **DNSSEC** enabled (it was unsigned on 2026-10-31; enabling it requires
+   adding the DS record at the registrar).
+4. **Security → WAF**: optional for a static site; the API already rate-limits per IP in D1.
+   Application-level limits are the ones to rely on.
+
 ### AirShare after a deploy
 
 `/airshare/app/` uses `/api/airshare/*` and the D1 tables from `0002_airshare.sql`; it needs no

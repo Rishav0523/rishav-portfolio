@@ -40,23 +40,34 @@ export function Field({
   label,
   optional,
   hint,
+  htmlFor,
   children,
   className,
 }: {
   label: string;
   optional?: boolean;
   hint?: string;
+  htmlFor?: string;
   children: React.ReactNode;
   className?: string;
 }) {
+  const content = (
+    <>
+      {label}
+      {optional ? (
+        <span className="ml-1 font-normal text-[var(--muted)]">(optional)</span>
+      ) : null}
+    </>
+  );
   return (
     <div className={`form-field ${className ?? ""}`}>
-      <span className="form-label">
-        {label}
-        {optional ? (
-          <span className="ml-1 font-normal text-[var(--muted)]">(optional)</span>
-        ) : null}
-      </span>
+      {htmlFor ? (
+        <label className="form-label" htmlFor={htmlFor}>
+          {content}
+        </label>
+      ) : (
+        <span className="form-label">{content}</span>
+      )}
       {children}
       {hint ? <span className="form-hint">{hint}</span> : null}
     </div>
@@ -82,7 +93,7 @@ export function TextInput({
 }) {
   const id = useId();
   return (
-    <Field label={label} optional={optional} className={className}>
+    <Field label={label} optional={optional} htmlFor={id} className={className}>
       <input
         id={id}
         className="form-input"
@@ -112,7 +123,7 @@ export function TextArea({
 }) {
   const id = useId();
   return (
-    <Field label={label} optional={optional}>
+    <Field label={label} optional={optional} htmlFor={id}>
       <textarea
         id={id}
         className="form-input"
@@ -143,7 +154,7 @@ export function LinesInput({
 }) {
   const id = useId();
   return (
-    <Field label={label} optional={optional} hint={hint}>
+    <Field label={label} optional={optional} htmlFor={id} hint={hint}>
       <textarea
         id={id}
         className="form-input"
@@ -179,6 +190,7 @@ export function LinksInput({
     <Field
       label={label}
       optional={optional}
+      htmlFor={id}
       hint="One link per line as: Label | https://example.com"
     >
       <textarea
@@ -217,7 +229,7 @@ export function SelectInput({
 }) {
   const id = useId();
   return (
-    <Field label={label}>
+    <Field label={label} htmlFor={id}>
       <select
         id={id}
         className="form-input"

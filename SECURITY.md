@@ -23,8 +23,15 @@ access the admin area without permission.
 
 ### Transport and headers
 
-- HTTPS only; Cloudflare terminates TLS and issues the certificate for the custom domain.
+- HTTPS; Cloudflare terminates TLS and issues the certificate for the custom domain. HSTS is sent
+  with a one-year max-age. The zone's **Always Use HTTPS** toggle must stay on in the Cloudflare
+  dashboard — it is not managed by this repository.
 - API responses send `X-Content-Type-Options: nosniff` and `Referrer-Policy: no-referrer`.
+- Static pages send `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
+  `Referrer-Policy: strict-origin-when-cross-origin`, a strict `Permissions-Policy`, and a
+  `Content-Security-Policy` that allows only same-origin resources plus the Turnstile origin
+  (`challenges.cloudflare.com`). Inline scripts and styles are permitted because the Next.js
+  static export and the CSP-compatible build rely on them.
 - Cookies are `HttpOnly`, `SameSite=Strict`, `Secure` on HTTPS, scoped to `/`.
 - Static pages are generated HTML; there is no server-side rendering of user input and no inline
   script injection point. Content is rendered with React escaping.

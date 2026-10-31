@@ -61,15 +61,20 @@ function minutesAgo(minutes: number): string {
   return new Date(Date.now() - minutes * 60_000).toISOString();
 }
 
-async function readDoc(env: Env): Promise<ContentDoc> {
+// Public pages must keep rendering if D1 is down, but the admin editor must see
+// the failure: serving defaults there would overwrite real content on next save.
+async function readDoc(env: Env, strict = false): Promise<ContentDoc> {
   try {
     const row = await env.DB.prepare("SELECT document FROM site_content WHERE id = 1").first<{
       document: string;
     }>();
     if (!row) return defaultContent;
     const parsed = validateContent(JSON.parse(row.document));
-    return parsed.ok ? parsed.doc : defaultContent;
-  } catch {
+    if (parsed.ok) return parsed.doc;
+    if (strict) throw new Error("Stored content failed validation.");
+    return defaultContent;
+  } catch (error) {
+    if (strict) throw error;
     return defaultContent;
   }
 }
@@ -256,8 +261,12 @@ admin.post("/logout", (c) => {
 admin.get("/session", (c) => c.json({ authenticated: true }));
 
 admin.get("/content", async (c) => {
-  const doc = await readDoc(c.env);
-  return c.json(doc);
+  try {
+    const doc = await readDoc(c.env, true);
+    return c.json(doc);
+  } catch {
+    return jsonError("Stored content could not be read. Nothing was changed.", 503);
+  }
 });
 
 admin.put("/content", async (c) => {
@@ -372,11 +381,16 @@ admin.post("/resume", async (c) => {
   }
 
   const key = "resume/rishav-prasad-resume.pdf";
+  let doc: ContentDoc;
+  try {
+    doc = await readDoc(c.env, true);
+  } catch {
+    return jsonError("Stored content could not be read. The file was not uploaded.", 503);
+  }
   await c.env.MEDIA.put(key, await file.arrayBuffer(), {
     httpMetadata: { contentType: "application/pdf" },
   });
 
-  const doc = await readDoc(c.env);
   doc.resumePdf = { href: `/media/${key}`, approvedForPublish: true };
   await writeDoc(c.env, doc);
   return c.json({ ok: true, href: `/media/${key}`, size: file.size }, 201);

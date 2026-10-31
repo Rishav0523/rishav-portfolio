@@ -705,6 +705,9 @@ export default function AdminDashboard() {
           kind: "success",
           text: result.body.message ?? "Rebuild queued. The site updates in a minute or two.",
         });
+      } else if (result.status === 401) {
+        setDoc(null);
+        setPhase("login");
       } else {
         setNotice({
           kind: "error",

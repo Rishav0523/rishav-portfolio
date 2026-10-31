@@ -13,6 +13,7 @@ const routes = [
   "/achievements/",
   "/resume/",
   "/airshare/",
+  "/airshare/app/",
   "/contact/",
 ];
 
