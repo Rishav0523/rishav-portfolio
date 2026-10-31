@@ -22,7 +22,7 @@
       <tr><td>Local Wrangler stack</td><td>Earlier gate verification; not re-run for this report after the final deploy.</td><td><code>http://127.0.0.1:8787</code></td></tr>
     </tbody>
   </table>
-  <p class="tbl-note">Execution window: 31 October 2026, 07:30–07:45 UTC, against the deployment created at 00:11:13 UTC (version <code>5552d11a…</code>), which is the current 100% version.</p>
+  <p class="tbl-note">Execution window: 31 October 2026, 07:30–07:45 UTC, against the deployment created at 00:11:13 UTC (version <code>5552d11a…</code>), which was the 100% version at the time. The later handover commit deployed <code>a9f14486</code> with no application change.</p>
 
   <h3>Status vocabulary</h3>
   <p>The feature matrix uses the six labels required by the brief. They mean exactly this:</p>
@@ -169,7 +169,7 @@
       <tr><td>Admin sign-in</td><td><span class="badge owner">Requires External Configuration</span></td><td>Code and unit tests are correct, but the stored hash must be exactly 100,000 iterations. The hash value cannot be inspected; the owner must regenerate it if it is still 210,000.</td></tr>
       <tr><td>Admin dashboard screens</td><td><span class="badge nottested">Not Tested</span></td><td>Signed-in UI requires the owner's password and was not exercised for this report.</td></tr>
       <tr><td>Content editing in D1</td><td><span class="badge nottested">Not Tested</span></td><td>Validator covered by unit tests; the signed-in save form was not exercised this run.</td></tr>
-      <tr><td>Publish and rebuild</td><td><span class="badge working">Working</span></td><td>10 deployments recorded; content-driven redeploys appear at 22:09 and 22:17 UTC.</td></tr>
+      <tr><td>Publish and rebuild</td><td><span class="badge working">Working</span></td><td>Ten deployments existed during the audit; content-driven redeploys appear at 22:09 and 22:17 UTC.</td></tr>
       <tr><td>Messages inbox</td><td><span class="badge nottested">Not Tested</span></td><td>Requires sign-in. The message exists in D1 and the read API is gated by session auth.</td></tr>
       <tr><td>Media upload</td><td><span class="badge owner">Requires External Configuration</span></td><td>R2 is disabled; uploads return 503 and the UI hides the control.</td></tr>
       <tr><td>Resume upload</td><td><span class="badge owner">Requires External Configuration</span></td><td>Same R2 dependency; the page points at the repository PDF meanwhile.</td></tr>
@@ -297,7 +297,7 @@
   <h2 data-toc="Cloudflare and deployment checks">Cloudflare and deployment checks</h2>
   <p>The infrastructure review is documented in document 03. The checks that bear on test results are summarised here.</p>
   <ul>
-    <li>Latest deployment <code>5552d11a…</code> at 100%, created 31 October 2026 00:11:13 UTC; the test run targeted that version.</li>
+    <li>Deployment <code>5552d11a…</code> was at 100% during the test run (31 October 2026 00:11:13 UTC); the later documentation-only deploy <code>a9f14486</code> changed no application code.</li>
     <li><code>/api/health</code> reports the database as available, so the API tests exercised a live D1 binding.</li>
     <li>D1 contains 8 tables; content, messages, login throttling and AirShare rows all exist, with the counts listed in document 03.</li>
     <li>R2 is disabled and returns 503, which is the expected configured state, not a test failure.</li>

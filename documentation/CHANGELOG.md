@@ -11,7 +11,7 @@ deploys through GitHub Actions. This file records what changed and why, not ever
 - Added a sanitized D1 export at `backups/schema-and-content-2026-10-31.sql`; the full export stays
   out of the repository.
 - Documented the deployment, backup, restore and rollback procedures used in this engagement.
-- No application code changed in the documentation commit. The site continues to run `8c9ea09`.
+- No application code changed in the documentation commit. Application behaviour is unchanged since `8c9ea09`; the docs commit was deployed as Worker version `a9f14486` on 31 October 2026 at 08:33 UTC.
 - Recorded open owner actions: regenerate the admin hash if it still encodes 210,000 iterations,
   enable Always Use HTTPS, remove the unused Turnstile-shaped secret, and confirm a two-phone
   AirShare transfer.
