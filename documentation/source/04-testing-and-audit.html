@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Testing and Audit Report · Rishav Prasad Portfolio</title>
+</head>
+<body>
+<script type="application/json" id="doc-meta">
+{"number":"04","title":"Testing and Audit Report","subtitle":"Automated suites, responsive sweeps, functional checks, security review and the exact list of what remains unverified as of 31 October 2026.","version":"1.0","date":"31 October 2026","kind":"Project documentation"}
+</script>
+<main id="flow">
+
+  <h2 data-toc="Scope, method and status labels">Scope, method and status labels</h2>
+  <p class="lead">This report records what was executed, against which build, and what passed. It also records what could not be tested and why. No result in this document is projected or estimated.</p>
+
+  <h3>Test environments</h3>
+  <table class="compact">
+    <thead><tr><th>Environment</th><th>What ran there</th><th>Base URL</th></tr></thead>
+    <tbody>
+      <tr><td>Production</td><td>Playwright route checks, API checks, responsive sweep, AirShare two-context test, security probes.</td><td><code>https://rishavprasad.in</code></td></tr>
+      <tr><td>Node (no browser)</td><td>Vitest unit suites; Node test runner for the legacy AirShare server.</td><td>Local process</td></tr>
+      <tr><td>Local Wrangler stack</td><td>Earlier gate verification; not re-run for this report after the final deploy.</td><td><code>http://127.0.0.1:8787</code></td></tr>
+    </tbody>
+  </table>
+  <p class="tbl-note">Execution window: 31 October 2026, 07:30–07:45 UTC, against the deployment created at 00:11:13 UTC (version <code>5552d11a…</code>), which is the current 100% version.</p>
+
+  <h3>Status vocabulary</h3>
+  <p>The feature matrix uses the six labels required by the brief. They mean exactly this:</p>
+  <table class="compact">
+    <thead><tr><th>Label</th><th>Definition</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge working">Working</span></td><td>Exercised successfully in the environment named in the evidence column.</td></tr>
+      <tr><td><span class="badge partial">Partially Working</span></td><td>The tested path works, but a meaningful part of the real-world path remains unverified.</td></tr>
+      <tr><td><span class="badge notimpl">Not Implemented</span></td><td>The capability does not exist in the codebase.</td></tr>
+      <tr><td><span class="badge broken">Broken</span></td><td>Exercised and failed. No feature carries this label today.</td></tr>
+      <tr><td><span class="badge owner">Requires External Configuration</span></td><td>The code exists, but an owner-held secret or account setting is needed before it can work or be verified.</td></tr>
+      <tr><td><span class="badge nottested">Not Tested</span></td><td>Not exercised, and no failure is implied.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 data-toc="Execution summary">Execution summary</h2>
+  <p>Five automated suites and two static checks were run on 31 October 2026. Every reported check passed; the pass counts below are the raw totals printed by each runner.</p>
+
+  <table>
+    <thead><tr><th>Suite</th><th>Command</th><th class="num">Checks</th><th class="num">Failed</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Unit tests (Vitest)</td><td><code>npm test</code></td><td class="num">40</td><td class="num">0</td><td><span class="badge working">Passed</span></td></tr>
+      <tr><td>Legacy AirShare server (Node)</td><td><code>node --test airshare/test/airshare.test.js</code></td><td class="num">8</td><td class="num">0</td><td><span class="badge working">Passed</span></td></tr>
+      <tr><td>Production end-to-end</td><td><code>E2E_BASE=https://rishavprasad.in node tests/e2e.mjs</code></td><td class="num">31</td><td class="num">0</td><td><span class="badge working">Passed</span></td></tr>
+      <tr><td>Responsive sweep</td><td><code>E2E_BASE=https://rishavprasad.in node tests/e2e-responsive.mjs</code></td><td class="num">84</td><td class="num">0</td><td><span class="badge working">Passed</span></td></tr>
+      <tr><td>Production AirShare</td><td><code>E2E_BASE=https://rishavprasad.in node tests/e2e-airshare.mjs</code></td><td class="num">11</td><td class="num">0</td><td><span class="badge working">Passed</span></td></tr>
+      <tr><td>TypeScript</td><td><code>npm run typecheck</code> (app + Worker)</td><td class="num">2</td><td class="num">0</td><td><span class="badge working">Passed</span></td></tr>
+    </tbody>
+  </table>
+  <p class="tbl-note">Total: 176 reported checks, 0 failures. Counts are not directly comparable across suites: one "check" may be a unit assertion, a route at one width, or a multi-step browser scenario.</p>
+
+  <figure class="diagram">
+    <svg viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Checks by suite">
+      <text x="20" y="24" font-family="Manrope" font-size="11" font-weight="800" fill="#58707b" letter-spacing="2">CHECKS EXECUTED · 31 OCT 2026</text>
+      <g font-family="Manrope" font-size="11" fill="#04202a">
+        <text x="20" y="70">Responsive sweep</text>
+        <rect x="190" y="56" width="504" height="18" rx="4" fill="#00afb9"/>
+        <text x="704" y="70" font-weight="800">84</text>
+
+        <text x="20" y="106">Unit tests</text>
+        <rect x="190" y="92" width="240" height="18" rx="4" fill="#0081a7"/>
+        <text x="440" y="106" font-weight="800">40</text>
+
+        <text x="20" y="142">Production end-to-end</text>
+        <rect x="190" y="128" width="186" height="18" rx="4" fill="#0081a7"/>
+        <text x="386" y="142" font-weight="800">31</text>
+
+        <text x="20" y="178">AirShare browser</text>
+        <rect x="190" y="164" width="66" height="18" rx="4" fill="#f07167"/>
+        <text x="266" y="178" font-weight="800">11</text>
+
+        <text x="20" y="214">Legacy node server</text>
+        <rect x="190" y="200" width="48" height="18" rx="4" fill="#fed9b7"/>
+        <text x="248" y="214" font-weight="800">8</text>
+      </g>
+      <line x1="190" y1="240" x2="720" y2="240" stroke="#d7e5e9"/>
+      <text x="20" y="266" font-family="Manrope" font-size="9.5" fill="#58707b">Bar length is proportional to check count. The responsive sweep dominates because it runs 11 routes at 7 widths plus a page-error check per width.</text>
+    </svg>
+    <figcaption>Figure 4.1 — Distribution of the 174 executed checks. TypeScript checks are excluded from the bars.</figcaption>
+  </figure>
+
+  <h2 data-toc="Unit and protocol tests">Unit and protocol tests</h2>
+  <p>Vitest runs three suites in a Node environment. They cover the security-critical helpers, the content validator and the AirShare address rules without needing a browser or a database.</p>
+
+  <table class="compact">
+    <thead><tr><th>Suite</th><th class="num">Tests</th><th>Coverage</th></tr></thead>
+    <tbody>
+      <tr><td><code>tests/auth.test.ts</code></td><td class="num">9</td><td>Password match and mismatch; malformed hashes; rejection of iteration counts above the Workers cap without throwing; session round-trip; wrong-secret, tampered, expired and garbage tokens; deterministic SHA-256.</td></tr>
+      <tr><td><code>tests/content-schema.test.ts</code></td><td class="num">6</td><td>Committed snapshot accepted; trimming and empty optional fields; duplicate project slugs; unknown icons and unsafe hrefs; over-long entries and missing required fields; non-object input.</td></tr>
+      <tr><td><code>tests/airshare-protocol.test.ts</code></td><td class="num">25</td><td>Private, loopback, link-local, mDNS and IPv6 address acceptance; rejection of public and malformed addresses; host/peer-reflexive pair rules; IPv6 /64 and IPv4 /24 comparison; candidate-line parsing; transfer helpers; PIN and file-name generation.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Why the iteration-cap test matters</h3>
+  <p>The auth suite includes a regression test for the failure that broke admin sign-in: a stored hash above 100,000 iterations made the Workers PBKDF2 call throw instead of returning false, which surfaced as a generic "Something went wrong" message. The implementation now rejects any non-100,000 count before derivation, and the test asserts that it returns false rather than throwing.</p>
+
+  <div class="warn"><b>Unit tests do not prove the production secret is correct.</b> The stored <code>ADMIN_PASSWORD_HASH</code> value cannot be read back from Cloudflare. If it still encodes 210,000 iterations, sign-in will fail even though every unit test passes. Section 12 records this as an owner action.</div>
+
+  <h3>Legacy AirShare Node server</h3>
+  <p>The original standalone LAN tool under <code>airshare/</code> still ships with its own server and tests. Eight Node tests passed: static client served, handshake, broadcast, 300 KB byte-for-byte reassembly, cancellation, disconnect cleanup, oversized start rejected, unknown transfer IDs ignored. This server is not part of the public site; the public <code>/airshare/app/</code> uses the D1-signalled WebRTC client instead.</p>
+
+  <h2 data-toc="Production end-to-end checks">Production end-to-end checks</h2>
+  <p>Playwright loaded the live site and asserted status codes, titles, horizontal overflow, API payloads and page errors. The run covered 31 checks.</p>
+
+  <table class="compact">
+    <thead><tr><th>Check</th><th>Assertion</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>11 public routes at 320 px</td><td>HTTP 200, non-empty title, overflow ≤ 1 px.</td><td><span class="badge working">Passed</span></td></tr>
+      <tr><td>11 public routes at 1440 px</td><td>Same assertions.</td><td><span class="badge working">Passed</span></td></tr>
+      <tr><td>Unknown path</td><td>HTTP 404 and a body containing "404".</td><td><span class="badge working">Passed</span></td></tr>
+      <tr><td><code>/robots.txt</code></td><td>Disallows <code>/admin</code>, names the sitemap.</td><td><span class="badge working">Passed</span></td></tr>
+      <tr><td><code>/sitemap.xml</code></td><td>Lists the public pages (11 URLs).</td><td><span class="badge working">Passed</span></td></tr>
+      <tr><td><code>/api/health</code></td><td><code>ok:true</code> and <code>database:"ok"</code>.</td><td><span class="badge working">Passed</span></td></tr>
+      <tr><td><code>/api/content</code></td><td>Version 1 document with a non-empty projects array.</td><td><span class="badge working">Passed</span></td></tr>
+      <tr><td>Resume PDF</td><td>HTTP 200, <code>application/pdf</code>, larger than 10 KB.</td><td><span class="badge working">Passed</span></td></tr>
+      <tr><td>Contact form</td><td>Name, email and message fields visible; name is required.</td><td><span class="badge working">Passed</span></td></tr>
+      <tr><td>Admin gate</td><td>Shows sign-in, configuration notice or API-unreachable notice — never the dashboard.</td><td><span class="badge working">Passed</span></td></tr>
+      <tr><td>Page errors</td><td>No uncaught exceptions across the run.</td><td><span class="badge working">Passed</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Contact delivery evidence</h3>
+  <p>One contact message exists in production D1, created <strong>31 October 2026 at 06:34:08 UTC</strong>, unread. Its content and sender are intentionally not reproduced here. The row proves the whole path executed: Turnstile token accepted, validation passed, IP hash computed, insert committed.</p>
+  <p>No second submission was made to reproduce the sender flow, because that would store real personal data without a purpose. The negative path (a failed Turnstile challenge) was also not forced against production; it is covered by the rejection branch in code, not by a live negative test.</p>
+
+  <h2 data-toc="Responsive audit">Responsive audit</h2>
+  <p>Every public route was loaded at 320, 375, 425, 768, 1024, 1440 and 1920 px. For each of the 77 route/width combinations the sweep asserted: HTTP 200, no horizontal overflow, no broken images, a non-empty title, and no visible control shorter or narrower than 24 px. A page-error check ran per width.</p>
+
+  <table>
+    <thead><tr><th class="num">Width</th><th>Routes checked</th><th>Overflow</th><th>Broken images</th><th>Short tap targets</th><th>Page errors</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td class="num">320 px</td><td>11</td><td>None</td><td>None</td><td>None</td><td>None</td><td><span class="badge working">12/12</span></td></tr>
+      <tr><td class="num">375 px</td><td>11</td><td>None</td><td>None</td><td>None</td><td>None</td><td><span class="badge working">12/12</span></td></tr>
+      <tr><td class="num">425 px</td><td>11</td><td>None</td><td>None</td><td>None</td><td>None</td><td><span class="badge working">12/12</span></td></tr>
+      <tr><td class="num">768 px</td><td>11</td><td>None</td><td>None</td><td>None</td><td>None</td><td><span class="badge working">12/12</span></td></tr>
+      <tr><td class="num">1024 px</td><td>11</td><td>None</td><td>None</td><td>None</td><td>None</td><td><span class="badge working">12/12</span></td></tr>
+      <tr><td class="num">1440 px</td><td>11</td><td>None</td><td>None</td><td>None</td><td>None</td><td><span class="badge working">12/12</span></td></tr>
+      <tr><td class="num">1920 px</td><td>11</td><td>None</td><td>None</td><td>None</td><td>None</td><td><span class="badge working">12/12</span></td></tr>
+    </tbody>
+  </table>
+  <p class="tbl-note">84 checks total. The sweep visits lazy-loaded content by scrolling before measuring, so images below the fold are included.</p>
+
+  <div class="note"><b>Browser coverage is narrow.</b> The sweep runs Chromium only. Firefox and WebKit/Safari were not part of this run, and no physical iOS or Android device was used for the responsive audit. Mobile Safari behaviour is therefore <span class="badge nottested">Not Tested</span> (see section 12).</div>
+
+  <h3>Layout observations from the manual review</h3>
+  <ul>
+    <li>The navigation collapses to a menu below the desktop breakpoint; the menu opens and closes without layout shift at 320 px.</li>
+    <li>The AirShare explainer page uses stacked cards at phone widths and a two-column layout at 1024 px and above; no card clips its text.</li>
+    <li>The resume page shows the embedded PDF preview at desktop widths and a direct download link at phone widths.</li>
+    <li>Dark mode was captured separately and inspected at phone and desktop widths; contrast and layout matched the light theme.</li>
+  </ul>
+
+  <h2 data-toc="Functional status matrix">Functional status matrix</h2>
+  <p>This matrix is the authoritative feature-status list for the project. Every label uses the vocabulary defined in section 01.</p>
+
+  <table class="compact">
+    <thead><tr><th>Capability</th><th>Status</th><th>Evidence and caveat</th></tr></thead>
+    <tbody>
+      <tr><td>Public pages and navigation</td><td><span class="badge working">Working</span></td><td>11 routes return 200 at seven widths with no overflow; screenshots in document 01.</td></tr>
+      <tr><td>Custom 404</td><td><span class="badge working">Working</span></td><td>HTTP 404 with the designed page, verified in production.</td></tr>
+      <tr><td>Resume download</td><td><span class="badge working">Working</span></td><td>Repository PDF served with <code>application/pdf</code>, larger than 10 KB.</td></tr>
+      <tr><td>Contact form delivery</td><td><span class="badge working">Working</span></td><td>One message stored 31 Oct 2026 06:34:08 UTC; field limits and IP throttling present.</td></tr>
+      <tr><td>Turnstile challenge</td><td><span class="badge owner">Requires External Configuration</span></td><td>Widget key and secret exist and the live form renders. The failure path was not forced; the Turnstile dashboard policy is owner-controlled.</td></tr>
+      <tr><td>Admin sign-in</td><td><span class="badge owner">Requires External Configuration</span></td><td>Code and unit tests are correct, but the stored hash must be exactly 100,000 iterations. The hash value cannot be inspected; the owner must regenerate it if it is still 210,000.</td></tr>
+      <tr><td>Admin dashboard screens</td><td><span class="badge nottested">Not Tested</span></td><td>Signed-in UI requires the owner's password and was not exercised for this report.</td></tr>
+      <tr><td>Content editing in D1</td><td><span class="badge nottested">Not Tested</span></td><td>Validator covered by unit tests; the signed-in save form was not exercised this run.</td></tr>
+      <tr><td>Publish and rebuild</td><td><span class="badge working">Working</span></td><td>10 deployments recorded; content-driven redeploys appear at 22:09 and 22:17 UTC.</td></tr>
+      <tr><td>Messages inbox</td><td><span class="badge nottested">Not Tested</span></td><td>Requires sign-in. The message exists in D1 and the read API is gated by session auth.</td></tr>
+      <tr><td>Media upload</td><td><span class="badge owner">Requires External Configuration</span></td><td>R2 is disabled; uploads return 503 and the UI hides the control.</td></tr>
+      <tr><td>Resume upload</td><td><span class="badge owner">Requires External Configuration</span></td><td>Same R2 dependency; the page points at the repository PDF meanwhile.</td></tr>
+      <tr><td>AirShare browser transfer</td><td><span class="badge partial">Partially Working</span></td><td>11/11 checks in production with two browser contexts, including a byte-for-byte file. A physical two-phone transfer after the IPv6 fixes remains unconfirmed.</td></tr>
+      <tr><td>Email notification of messages</td><td><span class="badge notimpl">Not Implemented</span></td><td>Messages are stored in D1 only; there is no outbound email provider.</td></tr>
+      <tr><td>Automated database backups</td><td><span class="badge notimpl">Not Implemented</span></td><td>Manual export procedure only (document 05).</td></tr>
+      <tr><td>Web Analytics</td><td><span class="badge nottested">Not Tested</span></td><td>CSP permits the beacon; no beacon script was present in the served HTML on 31 Oct 2026.</td></tr>
+      <tr><td>Uptime and error monitoring</td><td><span class="badge notimpl">Not Implemented</span></td><td>No external monitor or error tracker; Cloudflare logs are the only record.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 data-toc="AirShare verification">AirShare verification</h2>
+  <p>The public AirShare app was exercised end to end against production with two independent browser contexts. Both joined the same PIN room, negotiated a direct connection, exchanged a message and transferred a file.</p>
+
+  <table class="compact">
+    <thead><tr><th class="num">#</th><th>Check</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td>A room is created with a generated 8-digit PIN.</td><td><span class="badge working">Passed</span></td></tr>
+      <tr><td class="num">2</td><td>A malformed PIN is rejected by the API.</td><td><span class="badge working">Passed</span></td></tr>
+      <tr><td class="num">3</td><td>The second device joins the same room with the PIN.</td><td><span class="badge working">Passed</span></td></tr>
+      <tr><td class="num">4</td><td>Both devices see each other.</td><td><span class="badge working">Passed</span></td></tr>
+      <tr><td class="num">5</td><td>Both browsers report a direct local connection.</td><td><span class="badge working">Passed</span></td></tr>
+      <tr><td class="num">6</td><td>A chat message crosses the connection.</td><td><span class="badge working">Passed</span></td></tr>
+      <tr><td class="num">7</td><td>A file arrives byte-for-byte (about 120 KB, 5,000 repeated lines).</td><td><span class="badge working">Passed</span></td></tr>
+      <tr><td class="num">8</td><td>Leaving removes the device from the room.</td><td><span class="badge working">Passed</span></td></tr>
+      <tr><td class="num">9</td><td>A peer-reflexive IPv6 pair is accepted on both sides.</td><td><span class="badge working">Passed</span></td></tr>
+      <tr><td class="num">10</td><td>Different IPv6 subnets are still stopped.</td><td><span class="badge working">Passed</span></td></tr>
+      <tr><td class="num">11</td><td>No uncaught page errors.</td><td><span class="badge working">Passed</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="warn"><b>Not a substitute for two phones.</b> Both contexts ran on one machine. The owner's real two-phone tests failed twice before the peer-reflexive and IPv6 /64 fixes; a successful retry on the same two phones has not been reported. Treat cross-device behaviour as unconfirmed until that retry succeeds. Guest or isolated Wi-Fi networks block device-to-device traffic by design, and AirShare deliberately refuses non-local candidates instead of relaying.</div>
+
+  <h3>Transfer limits</h3>
+  <table class="compact">
+    <thead><tr><th>Limit</th><th>Value</th><th>Enforced by</th></tr></thead>
+    <tbody>
+      <tr><td>File size</td><td>100 MB</td><td>Browser client</td></tr>
+      <tr><td>Chunk size</td><td>64 KB</td><td>Browser client</td></tr>
+      <tr><td>Peers per room</td><td>8</td><td>Worker API</td></tr>
+      <tr><td>Peer presence TTL</td><td>90 s</td><td>D1 timestamps plus sweeps</td></tr>
+      <tr><td>Join attempts</td><td>30 per 10 min per IP</td><td>Worker API</td></tr>
+      <tr><td>Signals</td><td>120 per minute per peer</td><td>Worker API</td></tr>
+      <tr><td>Signal payload</td><td>64 KB</td><td>Worker API</td></tr>
+      <tr><td>Signals per poll</td><td>50</td><td>Worker API</td></tr>
+      <tr><td>Signal TTL</td><td>10 min</td><td>D1 timestamps plus sweeps</td></tr>
+    </tbody>
+  </table>
+  <p class="tbl-note">A 100 MB transfer was not executed; the largest automated transfer was about 120 KB, and the legacy server suite used 300 KB.</p>
+
+  <h2 data-toc="Security audit">Security audit</h2>
+  <p>The review covered authentication, session handling, API authorisation, input handling, output escaping, headers, secret storage and abuse limits. Probes against production were read-only except for the contact validation call, which was rejected before any write.</p>
+
+  <h3>Controls verified</h3>
+  <table class="compact">
+    <thead><tr><th>Control</th><th>Implementation</th><th>Verification</th></tr></thead>
+    <tbody>
+      <tr><td>Password storage</td><td>PBKDF2-HMAC-SHA256, 100,000 iterations, per-hash salt, constant-time comparison.</td><td>Unit tests; code review.</td></tr>
+      <tr><td>Session cookie</td><td>HMAC-signed payload, 12 h expiry, <code>HttpOnly</code>, <code>SameSite=Strict</code>, <code>Secure</code> on HTTPS, path <code>/</code>.</td><td>Unit tests; code review.</td></tr>
+      <tr><td>Admin authorisation</td><td>Every <code>/api/admin/*</code> route behind session middleware.</td><td>Live 401 on content, messages and media endpoints.</td></tr>
+      <tr><td>Login throttling</td><td>8 attempts per 15 min per hashed IP; generic error text.</td><td>Code review; unit tests do not cover the D1 counter.</td></tr>
+      <tr><td>Origin checks</td><td>Mutating admin requests and login reject foreign <code>Origin</code> values.</td><td>Code review.</td></tr>
+      <tr><td>SQL injection</td><td>Every query uses bound parameters; no string-built SQL with user input.</td><td>Code review of all Worker routes.</td></tr>
+      <tr><td>XSS</td><td>React escaping for all content; the only <code>dangerouslySetInnerHTML</code> uses are a static theme script and JSON-LD built from constants.</td><td>Code review; CSP as defence in depth.</td></tr>
+      <tr><td>Input validation</td><td>Contact field lengths and email format; content schema caps every list and string; unsafe hrefs and unknown icons rejected.</td><td>Unit tests; live 400 response.</td></tr>
+      <tr><td>Body size</td><td>1 MB request cap, checked from <code>Content-Length</code>.</td><td>Code review.</td></tr>
+      <tr><td>Security headers</td><td>CSP, HSTS, frame denial, nosniff, referrer policy, permissions policy.</td><td>Live header capture (document 03).</td></tr>
+      <tr><td>Media handling</td><td>JPEG/PNG/WebP/GIF allow-list, 5 MB cap, random keys, path traversal rejection, <code>nosniff</code>.</td><td>Code review; R2 disabled so not live-tested.</td></tr>
+      <tr><td>Privacy of IPs</td><td>Only <code>sha256("contact:" + IP)</code> is stored; no raw address.</td><td>Code review; schema inspection.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Live probes</h3>
+  <table class="compact">
+    <thead><tr><th>Request</th><th>Observed</th><th>Assessment</th></tr></thead>
+    <tbody>
+      <tr><td><code>GET /api/admin/content</code></td><td><code>401 {"error":"Not signed in."}</code></td><td>Gated correctly.</td></tr>
+      <tr><td><code>GET /api/admin/messages</code></td><td><code>401</code></td><td>Gated correctly.</td></tr>
+      <tr><td><code>GET /api/admin/media</code></td><td><code>401</code></td><td>Gated before the R2 check.</td></tr>
+      <tr><td><code>GET /media/x.png</code></td><td><code>503</code></td><td>R2 unavailable; no file disclosure.</td></tr>
+      <tr><td><code>GET /api/does-not-exist</code></td><td><code>404 application/json</code></td><td>No HTML error leak.</td></tr>
+      <tr><td><code>POST /api/contact {}</code></td><td><code>400 {"error":"Please enter your name."}</code></td><td>Validation before Turnstile and before any insert.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Findings and remediation</h3>
+  <table>
+    <thead><tr><th>ID</th><th>Severity</th><th>Finding</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>S01</td><td>High</td><td>Admin sign-in always failed: 210,000-iteration hashes exceed the Workers PBKDF2 ceiling and throw.</td><td><span class="badge working">Fixed in code</span> <code>5f71a29</code>; secret must still be regenerated by the owner.</td></tr>
+      <tr><td>S02</td><td>High</td><td>A failed script piped into <code>wrangler secret put</code> could store an empty secret that reports as configured.</td><td><span class="badge working">Fixed in procedure</span> <code>605ca6c</code>; documented and guarded by instructions.</td></tr>
+      <tr><td>S03</td><td>Medium</td><td>Static pages had no Content-Security-Policy.</td><td><span class="badge working">Fixed</span> <code>01faae7</code>.</td></tr>
+      <tr><td>S04</td><td>Medium</td><td>The admin editor fell back to default content if a read failed, which could overwrite real content on the next save.</td><td><span class="badge working">Fixed</span> <code>01faae7</code>; reads are strict in the admin path.</td></tr>
+      <tr><td>S05</td><td>Medium</td><td>Resume upload was offered even though R2 is disabled.</td><td><span class="badge working">Fixed</span> <code>7c37911</code>.</td></tr>
+      <tr><td>S06</td><td>Low</td><td>Admin form labels were not associated with their inputs.</td><td><span class="badge working">Fixed</span> <code>01faae7</code>.</td></tr>
+      <tr><td>S07</td><td>Low</td><td>An expired session left the dashboard in a stale state instead of returning to sign-in.</td><td><span class="badge working">Fixed</span> <code>01faae7</code>.</td></tr>
+      <tr><td>S08</td><td>Low</td><td><code>/airshare/app/</code> was missing from the sitemap.</td><td><span class="badge working">Fixed</span> <code>01faae7</code>.</td></tr>
+      <tr><td>S09</td><td>Low</td><td>The analytics beacon was blocked by the CSP.</td><td><span class="badge working">Fixed</span> <code>8c9ea09</code>; collection still unconfirmed.</td></tr>
+      <tr><td>S10</td><td>High</td><td>Plain HTTP is answered with 200 because "Always Use HTTPS" is not enforcing a redirect.</td><td><span class="badge owner">Open — owner action</span></td></tr>
+      <tr><td>S11</td><td>Medium</td><td>An unused Worker secret has a Turnstile-key-shaped name.</td><td><span class="badge owner">Open — owner action</span></td></tr>
+      <tr><td>S12</td><td>Medium</td><td>DNSSEC is not enabled.</td><td><span class="badge owner">Open — owner action</span></td></tr>
+      <tr><td>S13</td><td>Low</td><td>DMARC is <code>p=quarantine</code> but there is no MX or SPF record.</td><td><span class="badge owner">Open — owner decision</span></td></tr>
+      <tr><td>S14</td><td>Low</td><td>No automated D1 backup or restore drill.</td><td><span class="badge notimpl">Open — manual procedure only</span></td></tr>
+      <tr><td>S15</td><td>Informational</td><td>CSP permits <code>unsafe-inline</code> scripts and styles.</td><td><span class="badge partial">Accepted</span> — required by the Next.js static export.</td></tr>
+      <tr><td>S16</td><td>Informational</td><td>HSTS is not preloaded.</td><td><span class="badge partial">Accepted</span> — preload is a deliberate long-term commitment.</td></tr>
+    </tbody>
+  </table>
+  <p class="tbl-note">Severity reflects impact if exploited on this site: High means an attacker gains admin access or the site is materially exposed; Medium means a meaningful weakness with preconditions; Low means hardening or consistency; Informational means a documented trade-off.</p>
+
+  <h2 data-toc="Accessibility review">Accessibility review</h2>
+  <p>The automated sweep checked a narrow but useful subset of accessibility mechanics. It is not a WCAG audit.</p>
+  <table class="compact">
+    <thead><tr><th>Check</th><th>Coverage</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Tap target size</td><td>Visible buttons, inputs, selects, textareas, summaries and button-styled links ≥ 24 × 24 px at all seven widths.</td><td><span class="badge working">Passed</span></td></tr>
+      <tr><td>Document titles</td><td>Every route has a non-empty title.</td><td><span class="badge working">Passed</span></td></tr>
+      <tr><td>Image alternatives</td><td>No broken images; the sweep does not assert <code>alt</code> quality.</td><td><span class="badge partial">Partial</span></td></tr>
+      <tr><td>Form labels</td><td>Contact fields verified; admin fields were fixed in <code>01faae7</code> but not re-exercised without sign-in.</td><td><span class="badge partial">Partial</span></td></tr>
+      <tr><td>Keyboard navigation</td><td>Menu, theme toggle and forms are native controls; no formal keyboard-only pass was recorded.</td><td><span class="badge nottested">Not Tested</span></td></tr>
+      <tr><td>Screen reader</td><td>No NVDA, VoiceOver or TalkBack session was run.</td><td><span class="badge nottested">Not Tested</span></td></tr>
+      <tr><td>Colour contrast</td><td>Palette reviewed visually in light and dark themes; no automated contrast calculation was recorded.</td><td><span class="badge nottested">Not Tested</span></td></tr>
+    </tbody>
+  </table>
+
+  <h2 data-toc="Cloudflare and deployment checks">Cloudflare and deployment checks</h2>
+  <p>The infrastructure review is documented in document 03. The checks that bear on test results are summarised here.</p>
+  <ul>
+    <li>Latest deployment <code>5552d11a…</code> at 100%, created 31 October 2026 00:11:13 UTC; the test run targeted that version.</li>
+    <li><code>/api/health</code> reports the database as available, so the API tests exercised a live D1 binding.</li>
+    <li>D1 contains 8 tables; content, messages, login throttling and AirShare rows all exist, with the counts listed in document 03.</li>
+    <li>R2 is disabled and returns 503, which is the expected configured state, not a test failure.</li>
+    <li>DNS, TLS, the custom domain, the www redirect and the security headers all responded as documented.</li>
+  </ul>
+
+  <h2 data-toc="Test gaps and untested areas">Test gaps and untested areas</h2>
+  <p>These items are deliberately listed so the handover does not imply more coverage than exists.</p>
+
+  <table>
+    <thead><tr><th>Gap</th><th>Why it was not tested</th><th>Risk</th></tr></thead>
+    <tbody>
+      <tr><td>Production admin sign-in and signed-in screens</td><td>The password is owner-held and was not supplied for this documentation pass.</td><td>A stale 210,000-iteration hash would still block sign-in despite passing unit tests.</td></tr>
+      <tr><td>Turnstile failure path</td><td>Forcing a failed challenge in production would require replaying or invalidating a token.</td><td>A misconfigured widget could reject genuine messages; the code path exists but is unproven live.</td></tr>
+      <tr><td>Physical two-phone AirShare</td><td>The owner has not confirmed a retry after the IPv6 and peer-reflexive fixes.</td><td>Cross-device transfer may still fail on some phone/Wi-Fi combinations.</td></tr>
+      <tr><td>100 MB AirShare transfer</td><td>Time and memory heavy; automated transfers were 120 KB and 300 KB.</td><td>Large-transfer chunking or memory limits are unproven.</td></tr>
+      <tr><td>Firefox, Safari, iOS and Android browsers</td><td>The automated sweep is Chromium-only; no device lab was available.</td><td>Rendering or WebRTC differences on other engines are unknown.</td></tr>
+      <tr><td>Screen reader and keyboard-only use</td><td>No assistive-technology session was run.</td><td>Unknown accessibility barriers for keyboard or screen-reader users.</td></tr>
+      <tr><td>Load, stress and abuse testing</td><td>Out of scope and inappropriate against a free-tier production account.</td><td>Rate limits are reviewed in code but not stress-verified.</td></tr>
+      <tr><td>Backup restore</td><td>No full restore drill was performed; the export procedure is documented.</td><td>Restore steps are untested end to end.</td></tr>
+      <tr><td>Web Analytics collection</td><td>No beacon was observed in the served HTML and the dashboard could not be re-read.</td><td>Traffic data may not be recorded even though the CSP allows it.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 data-toc="Owner actions and conclusions">Owner actions and conclusions</h2>
+  <h3>Actions that require the owner's credentials</h3>
+  <ol>
+    <li><strong>Regenerate <code>ADMIN_PASSWORD_HASH</code> at exactly 100,000 iterations</strong> if it is still the 210,000-iteration value, then try signing in. Do not pipe a script that might fail into <code>wrangler secret put</code>.</li>
+    <li><strong>Enable "Always Use HTTPS"</strong> in SSL/TLS → Edge Certificates.</li>
+    <li><strong>Delete the unused Turnstile-shaped secret</strong> after confirming nothing depends on it.</li>
+    <li><strong>Confirm a two-phone AirShare transfer</strong> on the same Wi-Fi after the fixes.</li>
+    <li><strong>Decide whether to enable DNSSEC and whether to add SPF</strong> or relax the DMARC record.</li>
+    <li><strong>Check Web Analytics</strong> for visits, or add the beacon snippet if automatic injection is off.</li>
+  </ol>
+
+  <h3>Conclusion</h3>
+  <p>The public site, its API, contact delivery, static asset serving, routing and the browser AirShare flow are working as observed on 31 October 2026. Of 174 automated checks executed, none failed, and both TypeScript configurations passed. The project is not fully verified for production operation until the owner completes the admin-hash action and confirms a two-phone transfer; those two items are the difference between a passing test suite and a fully proven handover.</p>
+
+  <div class="note"><b>Reproduce the result.</b> Commands, prerequisites and expected counts are in document 05, section “Running the test suites”. Re-run them after any dependency upgrade or Worker change; the counts in this report are a snapshot, not a guarantee.</div>
+
+</main>
+</body>
+</html>

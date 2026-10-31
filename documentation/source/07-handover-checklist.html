@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Project Handover Checklist · Rishav Prasad Portfolio</title>
+</head>
+<body>
+<script type="application/json" id="doc-meta">
+{"number":"07","title":"Project Handover Checklist","subtitle":"What the owner receives, how to prove it works in production, what is still open, and the sign-off that closes the engagement.","version":"1.0","date":"31 October 2026","kind":"Project documentation"}
+</script>
+<main id="flow">
+
+  <h2 data-toc="How to use this checklist">How to use this checklist</h2>
+  <p class="lead">This is the last document in the set and the one to work through in order. It lists what exists, what the owner must be able to access, how to verify the site yourself, what remains open, and how to hand the project to someone else later.</p>
+
+  <p>Every statement here describes the state on <strong>31 October 2026</strong>. Where something could not be verified, this document says so instead of assuming it works. The other six documents explain the system; this one is the acceptance procedure and the record of what was and was not proven.</p>
+
+  <ul>
+    <li><strong>Tick the boxes</strong> in sections 4, 5 and 11 as you confirm each item. A printed copy with dates is a valid record.</li>
+    <li><strong>Do not write secret values here.</strong> Record only where a value is stored and whether it was confirmed present.</li>
+    <li><strong>If a step fails,</strong> turn to section 9 for the first check, then to document 05 for the matching runbook.</li>
+    <li><strong>Sign in section 11 only</strong> when the acceptance test in section 6 has been run by the owner.</li>
+  </ul>
+
+  <div class="note"><b>What "handover complete" means.</b> The owner can reach every account without the developer, the acceptance test passes on the production domain, the database backup exists outside the live system, and every open item is either closed or explicitly accepted as a known limitation.</div>
+
+  <h2 data-toc="What is being handed over">What is being handed over</h2>
+  <p>The deliverable is a working website plus the means to run it: a public domain, the code that builds it, a Worker and database in the owner's Cloudflare account, and documentation that explains each part. No paid service, shared account or developer-owned resource is required to keep it running.</p>
+
+  <figure class="diagram">
+    <svg viewBox="0 0 900 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ownership map of the handover">
+      <defs>
+        <marker id="h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="#0081a7"/>
+        </marker>
+      </defs>
+
+      <rect x="20" y="150" width="200" height="92" rx="12" fill="#0081a7"/>
+      <text x="40" y="181" font-family="Manrope" font-size="11" font-weight="800" fill="#cdeef3" letter-spacing="2">OWNER</text>
+      <text x="40" y="205" font-family="Manrope" font-size="16" font-weight="800" fill="#ffffff">Rishav Prasad</text>
+      <text x="40" y="226" font-family="Manrope" font-size="11" fill="#d8f1f5">single account holder</text>
+
+      <rect x="330" y="30" width="250" height="88" rx="10" fill="#fdfcdc" stroke="#00afb9"/>
+      <text x="348" y="56" font-family="Manrope" font-size="11" font-weight="800" fill="#58707b" letter-spacing="1.4">GITHUB</text>
+      <text x="348" y="79" font-family="Manrope" font-size="13" font-weight="800" fill="#04202a">Rishav0523/rishav-portfolio</text>
+      <text x="348" y="100" font-family="Manrope" font-size="11" fill="#3e5b52">code · tests · Actions deploy</text>
+
+      <rect x="640" y="30" width="240" height="88" rx="10" fill="#f3f9fa" stroke="#b6dae2"/>
+      <text x="658" y="56" font-family="Manrope" font-size="11" font-weight="800" fill="#58707b" letter-spacing="1.4">REGISTRAR</text>
+      <text x="658" y="79" font-family="Manrope" font-size="13" font-weight="800" fill="#04202a">rishavprasad.in</text>
+      <text x="658" y="100" font-family="Manrope" font-size="11" fill="#3e5b52">nameservers point to Cloudflare</text>
+
+      <rect x="330" y="150" width="550" height="200" rx="14" fill="#f3f9fa" stroke="#00afb9"/>
+      <text x="350" y="176" font-family="Manrope" font-size="11" font-weight="800" fill="#58707b" letter-spacing="2">CLOUDFLARE ACCOUNT</text>
+
+      <rect x="350" y="190" width="165" height="70" rx="8" fill="#ffffff" stroke="#b6dae2"/>
+      <text x="366" y="214" font-family="Manrope" font-size="12" font-weight="800" fill="#04202a">Zone rishavprasad.in</text>
+      <text x="366" y="234" font-family="Manrope" font-size="10.5" fill="#58707b">DNS · TLS · redirect rule</text>
+
+      <rect x="530" y="190" width="165" height="70" rx="8" fill="#ffffff" stroke="#b6dae2"/>
+      <text x="546" y="214" font-family="Manrope" font-size="12" font-weight="800" fill="#04202a">Worker rishav-portfolio</text>
+      <text x="546" y="234" font-family="Manrope" font-size="10.5" fill="#58707b">API · static assets</text>
+
+      <rect x="710" y="190" width="150" height="70" rx="8" fill="#ffffff" stroke="#b6dae2"/>
+      <text x="726" y="214" font-family="Manrope" font-size="12" font-weight="800" fill="#04202a">D1 database</text>
+      <text x="726" y="234" font-family="Manrope" font-size="10.5" fill="#58707b">content · messages</text>
+
+      <rect x="350" y="278" width="235" height="56" rx="8" fill="#ffffff" stroke="#b6dae2"/>
+      <text x="366" y="301" font-family="Manrope" font-size="12" font-weight="800" fill="#04202a">Turnstile widget</text>
+      <text x="366" y="320" font-family="Manrope" font-size="10.5" fill="#58707b">contact form only</text>
+
+      <rect x="600" y="278" width="260" height="56" rx="8" fill="#ffffff" stroke="#b6dae2"/>
+      <text x="616" y="301" font-family="Manrope" font-size="12" font-weight="800" fill="#04202a">Web Analytics · R2</text>
+      <text x="616" y="320" font-family="Manrope" font-size="10.5" fill="#58707b">analytics unconfirmed · R2 off</text>
+
+      <rect x="20" y="288" width="200" height="86" rx="10" fill="#eef8f2" stroke="#2f7d5b"/>
+      <text x="38" y="313" font-family="Manrope" font-size="11" font-weight="800" fill="#3c5f4e" letter-spacing="1.4">BACKUPS AND DOCS</text>
+      <text x="38" y="335" font-family="Manrope" font-size="12" font-weight="800" fill="#04202a">SQL exports</text>
+      <text x="38" y="355" font-family="Manrope" font-size="11" fill="#3c5f4e">this documentation set</text>
+
+      <line x1="220" y1="176" x2="328" y2="90" stroke="#0081a7" stroke-width="2" marker-end="url(#h)"/>
+      <line x1="220" y1="196" x2="328" y2="230" stroke="#0081a7" stroke-width="2" marker-end="url(#h)"/>
+      <line x1="220" y1="236" x2="100" y2="286" stroke="#0081a7" stroke-width="2" marker-end="url(#h)"/>
+      <line x1="220" y1="236" x2="328" y2="340" stroke="#0081a7" stroke-width="2" marker-end="url(#h)"/>
+
+      <polyline points="455,118 455,140 612,140 612,186" fill="none" stroke="#2f7d5b" stroke-width="2" marker-end="url(#h)"/>
+      <text x="470" y="131" font-family="Manrope" font-size="10" fill="#2f7d5b">deploys the Worker</text>
+      <line x1="760" y1="118" x2="760" y2="146" stroke="#0081a7" stroke-width="2" marker-end="url(#h)"/>
+      <text x="772" y="134" font-family="Manrope" font-size="10" fill="#58707b">delegates DNS</text>
+    </svg>
+    <figcaption>Figure 7.1 — Everything in this map belongs to the owner's personal accounts. The developer retains no access after the engagement ends.</figcaption>
+  </figure>
+
+  <table>
+    <thead><tr><th>Asset</th><th>What it contains</th><th>Where it lives</th></tr></thead>
+    <tbody>
+      <tr><td>Domain</td><td><code>rishavprasad.in</code>, nameserved by Cloudflare; <code>www</code> redirects to the apex.</td><td>Registrar account, Cloudflare zone</td></tr>
+      <tr><td>Source code</td><td>Next.js pages, Worker API, components, tests, scripts.</td><td>GitHub <code>Rishav0523/rishav-portfolio</code></td></tr>
+      <tr><td>Build and deploy</td><td>GitHub Actions workflow <code>deploy.yml</code>; <code>repository_dispatch</code> for content publishes.</td><td>GitHub Actions</td></tr>
+      <tr><td>Production</td><td>Worker <code>rishav-portfolio</code> serving <code>out/</code> plus <code>/api/*</code>.</td><td>Cloudflare Workers</td></tr>
+      <tr><td>Data</td><td>7 application tables and <code>d1_migrations</code>; about 94 kB at handover.</td><td>Cloudflare D1, APAC</td></tr>
+      <tr><td>Backups</td><td>Full SQL export (28.4 KB, private) and sanitized export (11.3 KB, in the repository).</td><td>Owner's machine, repository <code>backups/</code></td></tr>
+      <tr><td>Documentation</td><td>Seven PDFs plus the five markdown references and <code>.env.example</code>.</td><td>Repository <code>documentation/</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2 data-toc="Accounts and access">Accounts and access</h2>
+  <p>Four accounts together control the site. The owner must be able to sign in to each one, recover it, and change its password without help. Reading a dashboard is not required for daily use, but losing access to one account can take the site offline.</p>
+
+  <table>
+    <thead><tr><th>Account</th><th>Controls</th><th>Access check</th></tr></thead>
+    <tbody>
+      <tr><td>GitHub <code>Rishav0523</code></td><td>Repository, Actions, secrets <code>CLOUDFLARE_API_TOKEN</code> and <code>CLOUDFLARE_ACCOUNT_ID</code>.</td><td>Sign in, open the repository's Actions tab, confirm the last run succeeded.</td></tr>
+      <tr><td>Cloudflare (single account)</td><td>Zone, DNS, TLS, Worker, D1, Turnstile widget, Worker secrets.</td><td>Sign in, select <code>rishavprasad.in</code>, confirm the Worker and D1 database are listed.</td></tr>
+      <tr><td>Registrar</td><td>Domain registration, nameservers, renewal.</td><td>Sign in and confirm the domain shows the Cloudflare nameservers.</td></tr>
+      <tr><td>Email on the contact address</td><td>Receives replies sent from the portfolio contact form.</td><td>Send a test message through the site and confirm it arrives in the inbox.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="warn"><b>Not verified during this engagement.</b> The registrar's identity, the domain's expiry date and the payment method on file were not read; the registrar dashboard was outside the tested scope. The owner must confirm that auto-renew is on and that the contact email on the registrar account is current. Two-factor authentication and recovery codes on GitHub and Cloudflare should also be confirmed by the owner.</div>
+
+  <h2 data-toc="Credential checklist">Credential checklist</h2>
+  <p>Six values matter. None of them appears in this documentation, the repository or the static site. Confirm presence by name only; never paste a value into a document, a chat message or a screenshot.</p>
+
+  <table>
+    <thead><tr><th>Name</th><th>Stored in</th><th>Set by</th><th>Confirm without revealing it</th></tr></thead>
+    <tbody>
+      <tr><td><code>ADMIN_PASSWORD_HASH</code></td><td>Cloudflare Worker secret</td><td>Owner</td><td>Sign in at <code>/admin/</code>; a wrong count fails sign-in.</td></tr>
+      <tr><td><code>SESSION_SECRET</code></td><td>Cloudflare Worker secret</td><td>Owner</td><td>Sign-in succeeds and the session survives a page reload.</td></tr>
+      <tr><td><code>TURNSTILE_SECRET</code></td><td>Cloudflare Worker secret</td><td>Owner</td><td>A contact message is accepted with the widget's token.</td></tr>
+      <tr><td><code>GITHUB_TOKEN</code></td><td>Cloudflare Worker secret</td><td>Owner</td><td>Admin <strong>Publish</strong> starts a green Actions run.</td></tr>
+      <tr><td><code>CLOUDFLARE_API_TOKEN</code></td><td>GitHub Actions secret</td><td>Owner</td><td>A push to <code>main</code> deploys without an authentication error.</td></tr>
+      <tr><td><code>CLOUDFLARE_ACCOUNT_ID</code></td><td>GitHub Actions secret</td><td>Owner</td><td>Same deploy reaches the correct account.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note"><b>Local development values.</b> For <code>wrangler dev</code>, the same names live in <code>.dev.vars</code>, which is git-ignored. If the file is lost, regenerate values locally; production secrets are not recoverable and do not need to be.</div>
+
+  <table class="compact">
+    <thead><tr><th>Check</th><th>Record</th></tr></thead>
+    <tbody>
+      <tr><td>Password manager holds all six names and the owner's Cloudflare and GitHub logins.</td><td><span class="check"></span>Confirmed &nbsp; Date: __________</td></tr>
+      <tr><td>GitHub token scope is limited to this repository, Contents read and write, with a known expiry (90 days when issued).</td><td><span class="check"></span>Confirmed &nbsp; Date: __________</td></tr>
+      <tr><td>The unused Turnstile-shaped secret has been identified; deletion is tracked in section 7.</td><td><span class="check"></span>Confirmed &nbsp; Date: __________</td></tr>
+      <tr><td>No secret value is stored in the repository, documentation, screenshots or chat history.</td><td><span class="check"></span>Confirmed &nbsp; Date: __________</td></tr>
+    </tbody>
+  </table>
+
+  <h2 data-toc="Delivery evidence">Delivery evidence</h2>
+  <p>The following was measured on 31 October 2026 against the production deployment. It is a snapshot: rerunning the suites later can legitimately produce different counts if tests change.</p>
+
+  <table>
+    <thead><tr><th>Evidence</th><th>Result</th><th>Where to reproduce</th></tr></thead>
+    <tbody>
+      <tr><td>Type checking</td><td>Both configurations pass: app and Worker/test.</td><td>Document 05, “Running the test suites”</td></tr>
+      <tr><td>Automated checks</td><td><strong>174</strong> executed, <strong>0</strong> failed — 40 unit, 8 Node, 31 end-to-end, 84 responsive, 11 AirShare.</td><td>Document 04</td></tr>
+      <tr><td>Production deployment</td><td>10 deployments; latest <code>5552d11a…</code> at 00:11:13 UTC, serving 100% of traffic.</td><td>Document 03, “Worker deployment inventory”</td></tr>
+      <tr><td>API health</td><td><code>/api/health</code> returns <code>{"ok":true,"service":"portfolio-api","database":"ok"}</code>.</td><td>Open the URL in a browser</td></tr>
+      <tr><td>Database</td><td>7 application tables plus <code>d1_migrations</code>, about 94.2 kB, primary region APAC.</td><td>Document 03, “D1 database”</td></tr>
+      <tr><td>Backup, private</td><td><code>backups/rishav-portfolio-2026-10-31.sql</code> — 28,434 bytes, git-ignored.</td><td>Owner's machine</td></tr>
+      <tr><td>Backup, repository</td><td><code>backups/schema-and-content-2026-10-31.sql</code> — 11,348 bytes, SHA-256 <code>fc594cd9…</code>.</td><td>Repository <code>backups/</code></td></tr>
+      <tr><td>Restore drill</td><td>One <code>site_content</code> row (8,767 bytes) replayed into a scratch table without error.</td><td>Document 05, “Restore procedure”</td></tr>
+      <tr><td>Documentation</td><td>Seven PDFs and five markdown references; every PDF opened and page-counted after build.</td><td><code>documentation/</code></td></tr>
+    </tbody>
+  </table>
+
+  <div class="warn"><b>What the evidence does not cover.</b> Admin sign-in was not exercised with the owner's password; the stored hash may still encode 210,000 iterations. A physical two-phone AirShare transfer after the IPv6 fixes has not been reported. Firefox, Safari, iOS and Android were not in the automated sweep. A full database restore into a clean database was not drilled — only a single-row replay of the sanitized export.</div>
+
+  <h2 data-toc="Owner acceptance test">Owner acceptance test</h2>
+  <p>Run these steps yourself, in order, on the production domain. Each step states what to click and what you should see. Record the date beside the section when all twelve pass.</p>
+
+  <p class="small">Record each outcome below as you go. Use the notes column for the Wi-Fi network in step 11, or for the exact error text if a step fails.</p>
+  <table class="dense">
+    <thead><tr><th>Step</th><th>Check</th><th>Pass</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Home page loads over HTTPS</td><td><span class="check"></span></td><td></td></tr>
+      <tr><td>2</td><td>Eight public pages open</td><td><span class="check"></span></td><td></td></tr>
+      <tr><td>3</td><td>Resume PDF views and downloads</td><td><span class="check"></span></td><td></td></tr>
+      <tr><td>4</td><td>Theme switches and persists</td><td><span class="check"></span></td><td></td></tr>
+      <tr><td>5</td><td>Mobile menu works at narrow width</td><td><span class="check"></span></td><td></td></tr>
+      <tr><td>6</td><td>Custom 404 page</td><td><span class="check"></span></td><td></td></tr>
+      <tr><td>7</td><td>Health endpoint reports the database</td><td><span class="check"></span></td><td></td></tr>
+      <tr><td>8</td><td>Contact message sent and stored</td><td><span class="check"></span></td><td></td></tr>
+      <tr><td>9</td><td>Admin sign-in shows nine tabs</td><td><span class="check"></span></td><td></td></tr>
+      <tr><td>10</td><td>Edit, save and publish rebuilds the site</td><td><span class="check"></span></td><td></td></tr>
+      <tr><td>11</td><td>Two-phone AirShare transfer</td><td><span class="check"></span></td><td></td></tr>
+      <tr><td>12</td><td>Sitemap and robots rules</td><td><span class="check"></span></td><td></td></tr>
+    </tbody>
+  </table>
+
+  <ol class="steps">
+    <li><strong>Home page.</strong> Open <code>https://rishavprasad.in/</code> in a new private window. You should see the portrait, the headline and eight navigation links. The address bar shows a padlock and no mixed-content warning.</li>
+    <li><strong>Every public page.</strong> Click About, Education, Projects, Skills, Experience, Achievements, Resume and AirShare. Each opens at <code>/about/</code>, <code>/education/</code>, <code>/projects/</code>, <code>/skills/</code>, <code>/experience/</code>, <code>/achievements/</code>, <code>/resume/</code> and <code>/airshare/</code>; the current page is marked in the menu.</li>
+    <li><strong>Resume.</strong> On <code>/resume/</code>, click <strong>View PDF</strong>, then <strong>Download PDF</strong>. The file opens in the browser's PDF viewer and downloads from the site itself.</li>
+    <li><strong>Theme.</strong> Click the sun/moon button in the header. Colours switch; reload the page and the chosen theme persists.</li>
+    <li><strong>Narrow screen.</strong> Narrow the window to roughly phone width, or use the browser's device toolbar. The menu collapses to a button; open it and confirm all eight links. No page scrolls sideways.</li>
+    <li><strong>Custom 404.</strong> Open <code>https://rishavprasad.in/this-page-does-not-exist/</code>. You should see “Error 404” and a <strong>Back to home</strong> link.</li>
+    <li><strong>Health check.</strong> Open <code>https://rishavprasad.in/api/health</code>. The response is <code>{"ok":true,"service":"portfolio-api","database":"ok"}</code>.</li>
+    <li><strong>Contact form.</strong> Open <code>/contact/</code>, fill name, email and message, complete the Turnstile check, and click <strong>Send message</strong>. The page shows “Message sent. Thank you — I will reply to your email address.” and the message appears under Admin → Messages.</li>
+    <li><strong>Admin sign-in.</strong> Open <code>/admin/</code>, enter the owner password and click <strong>Sign in</strong>. Nine tabs appear: Profile, Education, Skills, Experience, Projects, Achievements, Resume, Messages, Media. <span class="badge owner">Requires External Configuration</span> If the page says the dashboard is not configured, or “Something went wrong”, see section 7 before continuing.</li>
+    <li><strong>Edit and publish.</strong> In Admin → Profile, change one word, click <strong>Save changes</strong> (“Saved to D1. Publish to rebuild the public site.”), then click <strong>Publish</strong>. A new GitHub Actions run starts and finishes green; reload the public page and confirm the change. Change it back afterwards.</li>
+    <li><strong>AirShare on two phones.</strong> Connect two phones to the same Wi-Fi and open <code>https://rishavprasad.in/airshare/app/</code>. On phone A click <strong>Create a room</strong> and note the 8-digit PIN. On phone B click <strong>Join with a PIN</strong>, type the PIN and click <strong>Join room</strong>. Send a small photo. Both devices must show the transfer completing. <span class="badge partial">Partially Working</span> This is the one step that automated tests cannot prove.</li>
+    <li><strong>Crawler files.</strong> Open <code>/sitemap.xml</code> and confirm the eleven public URLs; open <code>/robots.txt</code> and confirm it disallows <code>/admin</code> and <code>/api/</code>.</li>
+  </ol>
+
+  <div class="ok"><b>Pass condition.</b> Steps 1–10 and 12 must pass. Step 11 passes when the transfer completes on two real phones; if it does not, record the Wi-Fi network type and treat section 7, item A4, as open. Admin step 9 may require the hash action first.</div>
+
+  <h2 data-toc="Open items before sign-off">Open items before sign-off</h2>
+  <p>These items were found during the audit and deliberately left to the owner. None blocks the public site; the first four affect admin access, transport security, secret hygiene and the AirShare claim.</p>
+
+  <table>
+    <thead><tr><th>ID</th><th>Item</th><th>Priority</th><th>Owner action and check</th></tr></thead>
+    <tbody>
+      <tr><td>A1</td><td>Admin hash iteration count</td><td>High</td><td>If sign-in fails, regenerate with <code>node scripts/hash-password.mjs "&lt;password&gt;"</code>, confirm the prefix <code>pbkdf2_sha256$100000$</code>, then set <code>ADMIN_PASSWORD_HASH</code>. Never pipe the script into Wrangler. Check: step 9 passes.</td></tr>
+      <tr><td>A2</td><td>Always Use HTTPS</td><td>High</td><td>Cloudflare → SSL/TLS → Edge Certificates → enable <strong>Always Use HTTPS</strong>. Check: an <code>http://</code> request returns a 301 to <code>https://</code>.</td></tr>
+      <tr><td>A3</td><td>Unused Turnstile-shaped secret</td><td>High</td><td>Confirm no code reads it, then delete it in Worker → Settings → Variables and Secrets. Check: only the four documented secret names remain.</td></tr>
+      <tr><td>A4</td><td>Two-phone AirShare transfer</td><td>High</td><td>Retry step 11 on the same two phones. Record the result. Guest or isolated Wi-Fi blocks device-to-device traffic by design.</td></tr>
+      <tr><td>A5</td><td>DNSSEC</td><td>Medium</td><td>Optional: enable in DNS → Settings and note the DS record if the registrar changes.</td></tr>
+      <tr><td>A6</td><td>SPF / DMARC consistency</td><td>Medium</td><td>Either add a sending provider with SPF or relax the DMARC record; the domain sends no mail today.</td></tr>
+      <tr><td>A7</td><td>Web Analytics collection</td><td>Low</td><td>Check the dashboard for visits, or add the beacon snippet if automatic injection is off.</td></tr>
+      <tr><td>A8</td><td>R2 media uploads</td><td>Low</td><td>Optional: enable R2, uncomment the binding, redeploy, re-enable the upload control. The resume page does not depend on R2.</td></tr>
+      <tr><td>A9</td><td>Other browsers and devices</td><td>Medium</td><td>Open the site on iPhone Safari and Android Firefox; repeat step 11 there if AirShare matters.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 data-toc="Maintenance calendar">Maintenance calendar</h2>
+  <p>The site runs on free tiers and does not need a server administrator. It does need a short, regular check so that an expired token or a failed deploy is noticed before it matters.</p>
+
+  <table>
+    <thead><tr><th>When</th><th>Task</th><th>What success looks like</th></tr></thead>
+    <tbody>
+      <tr><td>After every publish</td><td>Open GitHub → Actions and read the newest run.</td><td>Green run; the public page shows the new content.</td></tr>
+      <tr><td>Weekly</td><td>Open <code>/api/health</code> and the admin Messages tab.</td><td><code>"database":"ok"</code>; no unexpected messages.</td></tr>
+      <tr><td>Monthly</td><td>Make a fresh database export; run the test suites.</td><td>New dated SQL file stored privately; 0 failures.</td></tr>
+      <tr><td>Every 90 days</td><td>Replace <code>GITHUB_TOKEN</code> before it expires.</td><td>Admin <strong>Publish</strong> starts a new Actions run.</td></tr>
+      <tr><td>Before 28 January 2027</td><td>Confirm the Cloudflare-managed certificate renewed.</td><td>New validity dates in SSL/TLS → Edge Certificates.</td></tr>
+      <tr><td>Yearly</td><td>Confirm domain renewal and registrar contact email.</td><td>Domain expiry extended; renewal receipt received.</td></tr>
+      <tr><td>After any incident</td><td>Take a backup and note the cause in the changelog.</td><td>Backup file stored; <code>CHANGELOG.md</code> updated.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 data-toc="When something breaks">When something breaks</h2>
+  <p>Start with the symptom, not the code. Most failures on this stack are a missing secret, an expired token or a database binding that has drifted — all visible in a dashboard.</p>
+
+  <table class="dense">
+    <thead><tr><th>Symptom</th><th>First check</th><th>Then</th></tr></thead>
+    <tbody>
+      <tr><td>The whole site is unavailable</td><td>Cloudflare status, then Worker → Deployments.</td><td>Roll back to the previous deployment; document 05, “Rollback and recovery”.</td></tr>
+      <tr><td>Pages load but forms and API fail</td><td><code>/api/health</code>; D1 binding in <code>wrangler.jsonc</code>.</td><td>Reapply migrations; check Worker logs for the D1 error.</td></tr>
+      <tr><td>Contact message is rejected</td><td><code>TURNSTILE_SECRET</code> present; widget site key matches.</td><td>Try a second browser; check the rate limit of 5 messages per hour per IP.</td></tr>
+      <tr><td>Admin says “not configured yet”</td><td><code>ADMIN_PASSWORD_HASH</code> exists and is not empty.</td><td>Re-run <code>ADMIN_PASSWORD_HASH</code> at 100,000 iterations and sign in again.</td></tr>
+      <tr><td>Admin says “Something went wrong”</td><td>Hash iteration count; see A1.</td><td>Regenerate the hash; confirm the printed prefix before setting it.</td></tr>
+      <tr><td>Publish does nothing</td><td><code>GITHUB_TOKEN</code> expiry and scope; Actions tab.</td><td>Issue a new fine-grained token, update the Worker secret, retry.</td></tr>
+      <tr><td>Deploy fails in Actions</td><td>Workflow log; <code>wrangler whoami</code> output.</td><td>Re-issue <code>CLOUDFLARE_API_TOKEN</code>; confirm the account ID secret.</td></tr>
+      <tr><td>AirShare will not connect</td><td>Both devices on the same non-guest Wi-Fi; same PIN.</td><td>Try another network; LAN isolation blocks the design; document 04, “AirShare verification”.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 data-toc="Transferring to a new maintainer">Transferring to a new maintainer</h2>
+  <p>If someone else takes over, every asset can be moved because none is tied to the developer's account. Do the steps in this order so access never depends on a single person at once.</p>
+
+  <h3>What moves, and how</h3>
+  <table class="dense">
+    <thead><tr><th>Asset</th><th>Transfer method</th></tr></thead>
+    <tbody>
+      <tr><td>Repository</td><td>Add a maintainer, or transfer ownership from GitHub settings.</td></tr>
+      <tr><td>Worker and D1</td><td>Stay in the Cloudflare account; invite the new maintainer as a member.</td></tr>
+      <tr><td>Domain</td><td>Stays at the registrar until a deliberate transfer with an authorisation code.</td></tr>
+      <tr><td>Secrets</td><td>Re-issued to the new holder; never copied in a message or document.</td></tr>
+      <tr><td>Backups and documentation</td><td>Copied out of band and kept in the repository.</td></tr>
+      <tr><td>Reply address</td><td>Updated in <code>lib/site.ts</code> and deployed before access changes hands.</td></tr>
+    </tbody>
+  </table>
+
+  <ol class="steps">
+    <li><strong>Invite the new maintainer</strong> to the GitHub repository with write access, and to the Cloudflare account with the minimum role needed. Keep the owner on both until the last step.</li>
+    <li><strong>Hand over this documentation set</strong> and confirm the new maintainer can open all seven PDFs and the repository's markdown references.</li>
+    <li><strong>Transfer the repository</strong> (Settings → General → Transfer ownership) if ownership should move. Actions secrets travel with it; verify them afterwards.</li>
+    <li><strong>Re-issue secrets</strong> the new maintainer will hold: <code>ADMIN_PASSWORD_HASH</code> (new password), <code>SESSION_SECRET</code>, <code>GITHUB_TOKEN</code>, <code>CLOUDFLARE_API_TOKEN</code>. Changing a secret invalidates nothing publicly except the current admin sessions and pending publishes.</li>
+    <li><strong>Update the email reply address</strong> in the contact flow if it belongs to the outgoing owner, and confirm the new address in <code>lib/site.ts</code> before deploying.</li>
+    <li><strong>Hand over the private backup</strong> out of band, and confirm the new maintainer can read the sanitized export in the repository.</li>
+    <li><strong>Run the acceptance test</strong> (section 6) together on the production domain.</li>
+    <li><strong>Remove the outgoing person's access</strong> from GitHub, Cloudflare and the registrar only after the acceptance test passes, then rotate the two API tokens once more.</li>
+  </ol>
+
+  <div class="warn"><b>Domain transfer is separate.</b> Moving the registrar requires an authorisation code and, for some extensions, a lock period. Plan it independently of the code handover, and do not change nameservers during the move.</div>
+
+  <h2 data-toc="Document set and sign-off">Document set and sign-off</h2>
+  <p>Seven PDFs cover the system from different angles; five markdown files give the fast reference. Read document 01 to use the site, 05 to operate it, and this one to accept it.</p>
+
+  <table class="compact">
+    <thead><tr><th>Document</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td>01 · User Manual</td><td>Every public page, the contact form and AirShare, in plain language.</td></tr>
+      <tr><td>02 · Technical Specification</td><td>Architecture, data model, API contract, security model, design system.</td></tr>
+      <tr><td>03 · Cloudflare Configuration and Change Report</td><td>Account, DNS, TLS, Worker, D1, secrets, analytics, changes and residual risks.</td></tr>
+      <tr><td>04 · Testing and Audit Report</td><td>174 checks, status matrix, security and accessibility findings, gaps.</td></tr>
+      <tr><td>05 · Deployment and Recovery Guide</td><td>Build, deploy, backup, restore, rollback and monitoring runbooks.</td></tr>
+      <tr><td>06 · File Reference and Code Modification Guide</td><td>Repository map, request flow, modification recipes and constraints.</td></tr>
+      <tr><td>07 · Project Handover Checklist</td><td>This document: accounts, evidence, acceptance test, open items, sign-off.</td></tr>
+      <tr><td>README · API · CHANGELOG · ARCHITECTURE · PROJECT_STRUCTURE</td><td>Markdown references for day-to-day work and history.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Sign-off checklist</h3>
+  <table>
+    <thead><tr><th>Item</th><th>Confirmed</th><th>Date</th></tr></thead>
+    <tbody>
+      <tr><td>All seven PDFs and the markdown references are present and open.</td><td><span class="check"></span></td><td>__________</td></tr>
+      <tr><td>The owner can sign in to GitHub, Cloudflare and the registrar without help.</td><td><span class="check"></span></td><td>__________</td></tr>
+      <tr><td>All six credentials are present by name and stored in a password manager.</td><td><span class="check"></span></td><td>__________</td></tr>
+      <tr><td>Admin sign-in succeeds, or item A1 is recorded as open with a date.</td><td><span class="check"></span></td><td>__________</td></tr>
+      <tr><td>Acceptance steps 1–10 and 12 pass; step 11 is passed or recorded as A4.</td><td><span class="check"></span></td><td>__________</td></tr>
+      <tr><td>The full backup is stored privately and the sanitized backup is committed.</td><td><span class="check"></span></td><td>__________</td></tr>
+      <tr><td>Open items A1–A9 are each closed or accepted as a known limitation.</td><td><span class="check"></span></td><td>__________</td></tr>
+      <tr><td>The repository is pushed, the latest Actions run is green, and production matches it.</td><td><span class="check"></span></td><td>__________</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Acceptance</h3>
+  <table>
+    <thead><tr><th>Role</th><th>Name</th><th>Signature</th><th>Date</th></tr></thead>
+    <tbody>
+      <tr><td>Owner</td><td>Rishav Prasad</td><td></td><td></td></tr>
+      <tr><td>Prepared by</td><td>Documentation and audit engagement</td><td></td><td>31 Oct 2026</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note"><b>This checklist is the record.</b> If a later change breaks something, compare the current behaviour with section 6 and the last green evidence in section 5. The difference points at the change to undo.</div>
+
+  <h3>Quick reference</h3>
+  <table class="compact">
+    <thead><tr><th>Item</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Production site</td><td><code>https://rishavprasad.in/</code></td></tr>
+      <tr><td>Health check</td><td><code>https://rishavprasad.in/api/health</code></td></tr>
+      <tr><td>Repository</td><td><code>github.com/Rishav0523/rishav-portfolio</code></td></tr>
+      <tr><td>Worker and database</td><td><code>rishav-portfolio</code> (both), D1 in APAC</td></tr>
+      <tr><td>Verification</td><td><code>npm run typecheck</code> then <code>npm test</code></td></tr>
+      <tr><td>Documentation</td><td><code>documentation/</code> — seven PDFs, five markdown files</td></tr>
+    </tbody>
+  </table>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cloudflare Configuration and Change Report · Rishav Prasad Portfolio</title>
+</head>
+<body>
+<script type="application/json" id="doc-meta">
+{"number":"03","title":"Cloudflare Configuration and Change Report","subtitle":"The account, zone, Worker, D1 database, DNS and edge services behind rishavprasad.in, with the changes made during this engagement and the items left for the owner.","version":"1.0","date":"31 October 2026","kind":"Project documentation"}
+</script>
+<main id="flow">
+
+  <h2 data-toc="Scope, evidence and method">Scope, evidence and method</h2>
+  <p class="lead">This report records the Cloudflare configuration as it was observed on 31 October 2026. It separates what was verified directly, what was read from the repository, and what could not be verified with the credentials available.</p>
+
+  <h3>What this document covers</h3>
+  <ul>
+    <li>The Cloudflare account and the <code>rishavprasad.in</code> zone.</li>
+    <li>Public DNS records, DNSSEC and email authentication records.</li>
+    <li>TLS, HTTPS behaviour and the security headers the site emits.</li>
+    <li>The <code>rishav-portfolio</code> Worker, its ten recorded deployments and its Static Assets routing.</li>
+    <li>The <code>rishav-portfolio</code> D1 database, its eight tables and current row counts.</li>
+    <li>Worker secret names, Turnstile, R2, Web Analytics and Cloudflare Pages.</li>
+    <li>The change report for this engagement and the follow-ups that remain.</li>
+  </ul>
+
+  <h3>Evidence sources</h3>
+  <table class="compact">
+    <thead><tr><th>Source</th><th>What it established</th><th>Reliability</th></tr></thead>
+    <tbody>
+      <tr><td>Wrangler 4.156.0 with the owner's OAuth login</td><td>Worker name, deployment list, versions, D1 metadata, secret names, R2 status.</td><td>Authoritative for the account</td></tr>
+      <tr><td>Public DNS-over-HTTPS (Cloudflare resolver)</td><td>A, AAAA, NS, DS, MX, TXT, CAA and DMARC answers.</td><td>Authoritative public view</td></tr>
+      <tr><td>HTTP requests to the production domain</td><td>Status codes, redirects, response headers, health endpoint, 404 handling.</td><td>Observed at the edge</td></tr>
+      <tr><td>TLS handshake to port 443</td><td>Certificate issuer, validity window and subject alternative names.</td><td>Observed at the edge</td></tr>
+      <tr><td>Repository files and git history</td><td>Intended configuration, bindings, routes and commit order.</td><td>Authoritative for code</td></tr>
+    </tbody>
+  </table>
+  <p class="tbl-note">Observation window: 31 October 2026, 07:00–07:30 UTC. Values such as row counts and deployment lists will drift; re-run the commands in section 13 before relying on them later.</p>
+
+  <div class="note"><b>Read-only engagement.</b> No Cloudflare dashboard setting, DNS record, secret value, Turnstile configuration or billing setting was changed during this engagement. The only changes were code commits deployed through the existing GitHub Actions pipeline, listed in section 12.</div>
+
+  <h2 data-toc="Account and zone inventory">Account and zone inventory</h2>
+  <p>The domain is active on a single Cloudflare account. The zone is served entirely by Cloudflare nameservers, and the apex is attached to a Worker as a custom domain.</p>
+
+  <table>
+    <thead><tr><th>Object</th><th>Identifier or value</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Cloudflare account</td><td><code>7d1e1101…187d16</code></td><td>Single account used for all objects below.</td></tr>
+      <tr><td>Zone</td><td><code>rishavprasad.in</code></td><td>Active; no subdomains are used as separate sites.</td></tr>
+      <tr><td>Authoritative nameservers</td><td><code>alla.ns.cloudflare.com</code><br><code>koa.ns.cloudflare.com</code></td><td>Both answers returned by the public resolver.</td></tr>
+      <tr><td>Worker</td><td><code>rishav-portfolio</code></td><td>Serves the API and proxies static assets.</td></tr>
+      <tr><td>Worker route</td><td><code>rishavprasad.in</code> (custom domain)</td><td>Declared in <code>wrangler.jsonc</code>.</td></tr>
+      <tr><td>D1 database</td><td><code>rishav-portfolio</code><br><code>e3c63392-6892-402f-8bdd-70b379fbc664</code></td><td>Primary region APAC; created 30 Oct 2026.</td></tr>
+      <tr><td>R2 bucket</td><td>None</td><td>R2 is not enabled on the account.</td></tr>
+      <tr><td>Turnstile widget</td><td>Site key <code>0x4AAAAAAFtJIYxwdn-xwScV</code></td><td>Public key; rendered on the contact page.</td></tr>
+      <tr><td>Cloudflare Pages</td><td>Not used</td><td>Deployment is a Worker with Static Assets.</td></tr>
+    </tbody>
+  </table>
+  <p class="tbl-note">The account identifier is truncated deliberately. It is not a credential, but the full value is unnecessary in a handover document.</p>
+
+  <h3>How the objects fit together</h3>
+  <figure class="diagram">
+    <svg viewBox="0 0 900 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cloudflare objects used by the portfolio">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="#0081a7"/>
+        </marker>
+      </defs>
+      <text x="20" y="26" font-family="Manrope" font-size="11" font-weight="800" fill="#58707b" letter-spacing="2">PUBLIC EDGE</text>
+      <rect x="20" y="40" width="200" height="96" rx="12" fill="#e7f4f7" stroke="#0081a7"/>
+      <text x="38" y="70" font-family="Manrope" font-size="15" font-weight="800" fill="#04202a">Zone</text>
+      <text x="38" y="92" font-family="Manrope" font-size="11" fill="#58707b">rishavprasad.in</text>
+      <text x="38" y="109" font-family="Manrope" font-size="11" fill="#58707b">DNSSEC unsigned</text>
+      <text x="38" y="126" font-family="Manrope" font-size="11" fill="#58707b">Proxy on · Google Trust WE1</text>
+
+      <rect x="260" y="40" width="250" height="96" rx="12" fill="#fdfcdc" stroke="#00afb9"/>
+      <text x="278" y="70" font-family="Manrope" font-size="15" font-weight="800" fill="#04202a">Worker</text>
+      <text x="278" y="92" font-family="Manrope" font-size="11" fill="#3e5b52">rishav-portfolio</text>
+      <text x="278" y="109" font-family="Manrope" font-size="11" fill="#3e5b52">Hono · /api/* · /media/*</text>
+      <text x="278" y="126" font-family="Manrope" font-size="11" fill="#3e5b52">10 deployments recorded</text>
+
+      <rect x="550" y="40" width="330" height="96" rx="12" fill="#eef8f2" stroke="#2f7d5b"/>
+      <text x="568" y="70" font-family="Manrope" font-size="15" font-weight="800" fill="#04202a">Static Assets</text>
+      <text x="568" y="92" font-family="Manrope" font-size="11" fill="#3c5f4e">out/ directory · 11 public pages</text>
+      <text x="568" y="109" font-family="Manrope" font-size="11" fill="#3c5f4e">auto-trailing-slash · 404-page</text>
+      <text x="568" y="126" font-family="Manrope" font-size="11" fill="#3c5f4e">Served without Worker invocation</text>
+
+      <text x="20" y="186" font-family="Manrope" font-size="11" font-weight="800" fill="#58707b" letter-spacing="2">BOUND SERVICES</text>
+      <rect x="20" y="200" width="250" height="120" rx="12" fill="#fed9b7" stroke="#f07167"/>
+      <text x="38" y="230" font-family="Manrope" font-size="15" font-weight="800" fill="#04202a">D1</text>
+      <text x="38" y="252" font-family="Manrope" font-size="11" fill="#5a3a2c">binding DB · 8 tables</text>
+      <text x="38" y="269" font-family="Manrope" font-size="11" fill="#5a3a2c">94.2 kB · APAC</text>
+      <text x="38" y="286" font-family="Manrope" font-size="11" fill="#5a3a2c">Content, messages, media,</text>
+      <text x="38" y="303" font-family="Manrope" font-size="11" fill="#5a3a2c">AirShare presence and signals</text>
+
+      <rect x="310" y="200" width="250" height="120" rx="12" fill="#e7f4f7" stroke="#0081a7"/>
+      <text x="328" y="230" font-family="Manrope" font-size="15" font-weight="800" fill="#04202a">Turnstile</text>
+      <text x="328" y="252" font-family="Manrope" font-size="11" fill="#58707b">Managed widget</text>
+      <text x="328" y="269" font-family="Manrope" font-size="11" fill="#58707b">Contact form only</text>
+      <text x="328" y="286" font-family="Manrope" font-size="11" fill="#58707b">Secret stored as Worker secret</text>
+
+      <rect x="600" y="200" width="280" height="120" rx="12" fill="#f3f4f6" stroke="#8aa0a9" stroke-dasharray="5 4"/>
+      <text x="618" y="230" font-family="Manrope" font-size="15" font-weight="800" fill="#42565f">Not enabled</text>
+      <text x="618" y="252" font-family="Manrope" font-size="11" fill="#58707b">R2 · API returns 10042</text>
+      <text x="618" y="269" font-family="Manrope" font-size="11" fill="#58707b">Web Analytics · beacon unconfirmed</text>
+      <text x="618" y="286" font-family="Manrope" font-size="11" fill="#58707b">Pages · not used</text>
+      <text x="618" y="303" font-family="Manrope" font-size="11" fill="#58707b">Email Routing · not observed</text>
+
+      <line x1="220" y1="88" x2="258" y2="88" stroke="#0081a7" stroke-width="2" marker-end="url(#ar)"/>
+      <line x1="510" y1="88" x2="548" y2="88" stroke="#0081a7" stroke-width="2" marker-end="url(#ar)"/>
+      <line x1="145" y1="136" x2="145" y2="198" stroke="#f07167" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#ar)"/>
+      <line x1="435" y1="136" x2="435" y2="198" stroke="#0081a7" stroke-width="2" marker-end="url(#ar)"/>
+    </svg>
+    <figcaption>Figure 3.1 — Cloudflare objects in use. Solid lines are active request paths; the dashed line is a binding used by the Worker at request time.</figcaption>
+  </figure>
+
+  <h2 data-toc="Public DNS records">Public DNS records</h2>
+  <p>Only the apex and <code>www</code> resolve. The apex is proxied through Cloudflare; the nameservers are Cloudflare's. There is no mail infrastructure on the domain.</p>
+
+  <table>
+    <thead><tr><th>Name</th><th>Type</th><th>Value observed</th><th>Interpretation</th></tr></thead>
+    <tbody>
+      <tr><td><code>rishavprasad.in</code></td><td>NS</td><td><code>alla.ns.cloudflare.com</code><br><code>koa.ns.cloudflare.com</code></td><td>Zone delegated to Cloudflare.</td></tr>
+      <tr><td><code>rishavprasad.in</code></td><td>A</td><td><code>104.21.3.214</code><br><code>172.67.131.55</code></td><td>Cloudflare anycast addresses; proxy enabled.</td></tr>
+      <tr><td><code>rishavprasad.in</code></td><td>AAAA</td><td><code>2606:4700:3037::6815:3d6</code><br><code>2606:4700:3037::ac43:8337</code></td><td>IPv6 supported at the edge.</td></tr>
+      <tr><td><code>www.rishavprasad.in</code></td><td>A</td><td>Same two anycast addresses</td><td>Resolves, then redirects to the apex (section 05).</td></tr>
+      <tr><td><code>rishavprasad.in</code></td><td>MX</td><td>None</td><td>No mailbox on the domain.</td></tr>
+      <tr><td><code>rishavprasad.in</code></td><td>TXT</td><td>None returned</td><td>No SPF record and no site-verification TXT record at the apex.</td></tr>
+      <tr><td><code>rishavprasad.in</code></td><td>CAA</td><td>None</td><td>No certificate-authority restriction.</td></tr>
+      <tr><td><code>_dmarc.rishavprasad.in</code></td><td>TXT</td><td><code>v=DMARC1; p=quarantine; adkim=r; aspf=r; rua=mailto:dmarc_rua@onsecureserver.net;</code></td><td>DMARC policy exists, pointing reports at a third-party mailbox.</td></tr>
+      <tr><td><code>rishavprasad.in</code></td><td>DS</td><td>None</td><td>DNSSEC is not enabled; the resolver cannot authenticate the zone.</td></tr>
+    </tbody>
+  </table>
+  <p class="tbl-note">Queried with DNS-over-HTTPS against <code>cloudflare-dns.com</code>. Negative answers were confirmed by the absence of an Answer section.</p>
+
+  <h3>What the DNS picture means</h3>
+  <ul>
+    <li><strong>No email is configured.</strong> There is no MX record and no SPF record, yet a DMARC record with <code>p=quarantine</code> exists. Any mail claiming to be from the domain has no SPF pass path and will be quarantined; this is harmless for the website but inconsistent if email is ever added.</li>
+    <li><strong>No DNSSEC.</strong> The zone is not signed, so there is no DS record. Enabling DNSSEC is a one-click operation in the dashboard but requires care if the domain's registrar is changed later.</li>
+    <li><strong>No CAA pinning.</strong> Certificate issuance is not restricted to an authority. Cloudflare currently issues through Google Trust Services (<code>WE1</code>).</li>
+    <li><strong>The registrar's nameservers are no longer authoritative.</strong> The resolver's authority section points at Cloudflare, which is expected for an active zone.</li>
+  </ul>
+
+  <h2 data-toc="TLS and HTTPS behaviour">TLS and HTTPS behaviour</h2>
+  <p>HTTPS is served with a Cloudflare-managed edge certificate. Plain HTTP is still answered, which means the zone-level "Always Use HTTPS" behaviour is not enforced.</p>
+
+  <table class="compact">
+    <thead><tr><th>Check</th><th>Result on 31 Oct 2026</th><th>Assessment</th></tr></thead>
+    <tbody>
+      <tr><td>Certificate issuer</td><td>Google Trust Services, <code>WE1</code></td><td>Cloudflare-managed, publicly trusted.</td></tr>
+      <tr><td>Validity</td><td>30 Oct 2026 → 28 Jan 2027</td><td>Auto-renewed by Cloudflare; no action needed.</td></tr>
+      <tr><td>Subject alternative names</td><td><code>rishavprasad.in</code>, <code>*.rishavprasad.in</code></td><td>Wildcard covers <code>www</code> and future subdomains.</td></tr>
+      <tr><td>HSTS</td><td><code>max-age=31536000; includeSubDomains</code></td><td>Emitted by the Worker's headers. No <code>preload</code> directive.</td></tr>
+      <tr><td><code>http://rishavprasad.in/</code></td><td><code>200</code>, no redirect</td><td>Plain HTTP is served; HSTS protects returning browsers only.</td></tr>
+      <tr><td><code>https://www.rishavprasad.in/</code></td><td><code>301</code> → <code>https://rishavprasad.in/</code></td><td>Canonical host; good for SEO.</td></tr>
+      <tr><td>Unknown path</td><td><code>404</code> with the custom page</td><td>Correct status, not a soft 404.</td></tr>
+      <tr><td>IPv6</td><td>AAAA answers present</td><td>Dual-stack at the edge.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="warn"><b>Residual risk: plain HTTP.</b> Because "Always Use HTTPS" is not enforcing a redirect at the edge, a first-time visitor typing the bare domain over HTTP gets the site over HTTP. The Worker does not redirect either. Enabling "Always Use HTTPS" in SSL/TLS → Edge Certificates closes this without a code change. This was left untouched because it is a zone setting, outside the read-only scope of this engagement.</div>
+
+  <h3>Security headers observed on the document response</h3>
+  <pre><code><span class="k">content-security-policy:</span> default-src 'self'; script-src 'self' 'unsafe-inline'
+  https://challenges.cloudflare.com https://static.cloudflareinsights.com;
+  style-src 'self' 'unsafe-inline'; img-src 'self' data:
+  https://challenges.cloudflare.com; font-src 'self';
+  connect-src 'self' blob: https://challenges.cloudflare.com
+  https://cloudflareinsights.com;
+  frame-src https://challenges.cloudflare.com; object-src 'none';
+  base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+<span class="k">strict-transport-security:</span> max-age=31536000; includeSubDomains
+<span class="k">x-frame-options:</span> DENY
+<span class="k">x-content-type-options:</span> nosniff
+<span class="k">referrer-policy:</span> strict-origin-when-cross-origin
+<span class="k">permissions-policy:</span> camera=(), microphone=(), geolocation=()
+</code></pre>
+  <p class="tbl-note">Headers are defined in <code>public/_headers</code> and served for static assets; <code>/api/*</code> responses add their own CORS and cache headers in the Worker.</p>
+
+  <h2 data-toc="Worker deployment inventory">Worker deployment inventory</h2>
+  <p>Ten deployments are recorded for <code>rishav-portfolio</code>, all on 30–31 October 2026. Each is a full version at 100% traffic; there are no gradual rollouts, tags or deployment messages.</p>
+
+  <table class="compact">
+    <thead><tr><th class="num">#</th><th>Deployed (UTC)</th><th>Version identifier</th><th>Corresponding work</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td>30 Oct 21:31:16</td><td><code>b707bf4e…</code></td><td>Admin sign-in fix (PBKDF2 at the Workers iteration ceiling).</td></tr>
+      <tr><td class="num">2</td><td>30 Oct 21:35:35</td><td><code>89ae00d0…</code></td><td>Redeploy of the same fix window (documentation commit).</td></tr>
+      <tr><td class="num">3</td><td>30 Oct 21:52:10</td><td><code>0422a27a…</code></td><td>Admin hash setup guidance; no application change.</td></tr>
+      <tr><td class="num">4</td><td>30 Oct 21:55:20</td><td><code>efdbf309…</code></td><td>Redeploy after the documentation commit.</td></tr>
+      <tr><td class="num">5</td><td>30 Oct 22:08:20</td><td><code>0f7ad387…</code></td><td>Resume upload hidden when R2 is unavailable.</td></tr>
+      <tr><td class="num">6</td><td>30 Oct 22:09:42</td><td><code>3499c21b…</code></td><td>Content publish from the dashboard (content snapshot refresh).</td></tr>
+      <tr><td class="num">7</td><td>30 Oct 22:17:12</td><td><code>3f5c888d…</code></td><td>Content snapshot after the D1 document update at 22:16:27.</td></tr>
+      <tr><td class="num">8</td><td>30 Oct 22:23:52</td><td><code>1f81607f…</code></td><td>Resume/R2 guidance and deploy retry.</td></tr>
+      <tr><td class="num">9</td><td>31 Oct 00:03:29</td><td><code>ffa150ee…</code></td><td>Audit hardening: headers and admin read paths.</td></tr>
+      <tr><td class="num">10</td><td>31 Oct 00:11:13</td><td><code>5552d11a…</code></td><td>CSP updated to allow the Cloudflare Web Analytics beacon.</td></tr>
+    </tbody>
+  </table>
+  <p class="tbl-note">Source: <code>npx wrangler deployments list --name rishav-portfolio</code>. Version identifiers are truncated; deployment messages are empty in Cloudflare, so the "corresponding work" column is inferred from commit times and was not read from the deployment record.</p>
+
+  <h3>Current status</h3>
+  <ul>
+    <li>Latest deployment: <strong>31 October 2026, 00:11:13 UTC</strong>, version <code>5552d11a-bf31-44f5-8471-d1e223e76161</code> at 100%.</li>
+    <li>Author recorded by Cloudflare: the owner's account email (omitted here), source "Unknown (deployment)" — consistent with <code>wrangler deploy</code> from CI using an API token.</li>
+    <li>Compatibility date: <code>2026-10-01</code>, set in <code>wrangler.jsonc</code>.</li>
+    <li>Health endpoint returns <code>{"ok":true,"service":"portfolio-api","database":"ok"}</code>, so the Worker and its D1 binding are live.</li>
+  </ul>
+
+  <h2 data-toc="Static Assets and routing">Static Assets and routing</h2>
+  <p>The Worker is also the asset host. Cloudflare serves files from <code>out/</code> without invoking the Worker unless the path matches an API or media prefix.</p>
+
+  <table>
+    <thead><tr><th>Setting</th><th>Value</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr><td><code>assets.directory</code></td><td><code>./out</code></td><td>The Next.js static export produced by <code>npm run build</code>.</td></tr>
+      <tr><td><code>assets.binding</code></td><td><code>ASSETS</code></td><td>Available to the Worker for fallback and asset metadata.</td></tr>
+      <tr><td><code>html_handling</code></td><td><code>auto-trailing-slash</code></td><td><code>/about</code> and <code>/about/</code> both resolve; canonical URLs use the trailing slash.</td></tr>
+      <tr><td><code>not_found_handling</code></td><td><code>404-page</code></td><td>Serves <code>404.html</code> with an HTTP 404 status.</td></tr>
+      <tr><td><code>run_worker_first</code></td><td><code>/api/*</code>, <code>/media/*</code></td><td>Only these prefixes invoke the Worker; everything else is a free static asset request.</td></tr>
+      <tr><td><code>routes</code></td><td><code>{"pattern":"rishavprasad.in","custom_domain":true}</code></td><td>Apex is the Worker's custom domain; the certificate covers it.</td></tr>
+      <tr><td><code>vars.SITE_URL</code></td><td><code>https://rishavprasad.in</code></td><td>Used for canonical URLs and the build-time content fetch.</td></tr>
+      <tr><td><code>vars.GITHUB_REPO</code></td><td><code>Rishav0523/rishav-portfolio</code></td><td>Target of the publish <code>repository_dispatch</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="config"><b>Why this matters for cost and resilience.</b> Because pages are static assets, they do not consume Worker requests and remain available even if the Worker is failing. Only the contact form, admin API, content API and AirShare signalling reach the Worker.</div>
+
+  <h2 data-toc="D1 database">D1 database</h2>
+  <p>One D1 database holds every piece of mutable state: the content document, contact messages, the media index, login throttling records and AirShare signalling rows. Both migrations, <code>0001_init.sql</code> and <code>0002_airshare.sql</code>, were applied manually.</p>
+
+  <table class="dense">
+    <thead><tr><th>Property</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Database name / binding</td><td><code>rishav-portfolio</code> / <code>DB</code></td></tr>
+      <tr><td>Database identifier</td><td><code>e3c63392-6892-402f-8bdd-70b379fbc664</code></td></tr>
+      <tr><td>Created</td><td>30 October 2026, 19:47:22 UTC</td></tr>
+      <tr><td>Tables</td><td>8</td></tr>
+      <tr><td>Size</td><td>94.2 kB</td></tr>
+      <tr><td>Region</td><td>APAC (primary), read replication disabled</td></tr>
+      <tr><td>Last 24 h</td><td>5,759 reads, 526 writes, 18,061 rows read, 1,417 rows written</td></tr>
+      <tr><td>Content document</td><td>1 row, 8,767 bytes, updated 30 Oct 2026 22:16:27 UTC</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Row counts at the time of audit</h3>
+  <p class="tbl-note">Counts taken 31 Oct 2026 07:15 UTC with <code>wrangler d1 execute … --remote</code>. The backup procedure is documented in document 05.</p>
+  <table class="compact">
+    <thead><tr><th>Table</th><th class="num">Rows</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>site_content</code></td><td class="num">1</td><td>The single published content document.</td></tr>
+      <tr><td><code>contact_messages</code></td><td class="num">1</td><td>One message received on 31 Oct 2026; sender details withheld from this report.</td></tr>
+      <tr><td><code>login_attempts</code></td><td class="num">1</td><td>One admin sign-in record, used for throttling.</td></tr>
+      <tr><td><code>media</code></td><td class="num">0</td><td>No files uploaded; R2 is unavailable.</td></tr>
+      <tr><td><code>airshare_peers</code></td><td class="num">1</td><td>Stale presence row from testing; expires by <code>last_seen</code> and has no user impact.</td></tr>
+      <tr><td><code>airshare_signals</code></td><td class="num">0</td><td>Signals are deleted after delivery or expiry.</td></tr>
+      <tr><td><code>airshare_join_attempts</code></td><td class="num">40</td><td>Join throttle records accumulated during testing.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note"><b>Growth is negligible.</b> Content is a single row; messages and login attempts are the only rows that accumulate. The free D1 limits are far above the current usage, and a backup strategy is documented in the deployment and recovery guide.</div>
+
+  <h2 data-toc="Worker secrets">Worker secrets</h2>
+  <p>Five secret names exist on the Worker. Values are not recorded anywhere in this repository or in this document.</p>
+
+  <table>
+    <thead><tr><th>Secret name</th><th>Purpose</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td><code>ADMIN_PASSWORD_HASH</code></td><td>PBKDF2-SHA256 hash of the admin password, stored as <code>sha256:salt:hash</code>.</td><td><span class="badge owner">Owner supplied</span></td></tr>
+      <tr><td><code>SESSION_SECRET</code></td><td>HMAC key for the signed admin session cookie.</td><td><span class="badge owner">Owner supplied</span></td></tr>
+      <tr><td><code>TURNSTILE_SECRET</code></td><td>Server-side key for Turnstile <code>siteverify</code>.</td><td><span class="badge working">In use</span></td></tr>
+      <tr><td><code>GITHUB_TOKEN</code></td><td>Fine-grained token used to trigger the deploy workflow on publish.</td><td><span class="badge owner">Owner supplied</span></td></tr>
+      <tr><td><code>0x4AAAAAAFtJI…</code> (redacted)</td><td>No code reads this name. Its name resembles a Turnstile key.</td><td><span class="badge partial">Unused</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="warn"><b>Action for the owner: remove the stray secret.</b> The fifth secret's <em>name</em> is itself a Turnstile-style key. It is not referenced by <code>worker/env.ts</code> or any other file. Keeping it costs nothing but widens the credential surface. After confirming no external tool depends on it, delete it in the dashboard under Worker → Settings → Variables and Secrets.</div>
+
+  <h3>Rotation</h3>
+  <ul>
+    <li><code>ADMIN_PASSWORD_HASH</code> — regenerate offline with the documented script, then replace the secret; existing sessions remain valid until the cookie expires (12 h) or <code>SESSION_SECRET</code> is rotated.</li>
+    <li><code>SESSION_SECRET</code> — rotating it invalidates every admin session immediately. Use 32 random bytes, base64-encoded.</li>
+    <li><code>GITHUB_TOKEN</code> — fine-grained, repository-scoped, expiring. Rotate in GitHub and Cloudflare together.</li>
+    <li><code>TURNSTILE_SECRET</code> — rotate in the Turnstile dashboard and update the Worker secret in the same sitting.</li>
+  </ul>
+
+  <h2 data-toc="Turnstile and bot protection">Turnstile and bot protection</h2>
+  <p>The contact form is the only public write endpoint and the only place Turnstile is used. The widget's public site key appears in the contact page bundle; the secret is a Worker secret.</p>
+
+  <table class="compact">
+    <thead><tr><th>Control</th><th>Configuration</th></tr></thead>
+    <tbody>
+      <tr><td>Widget</td><td>Managed challenge, rendered client-side in the contact form.</td></tr>
+      <tr><td>Public site key</td><td><code>0x4AAAAAAFtJIYxwdn-xwScV</code></td></tr>
+      <tr><td>Server verification</td><td><code>POST https://challenges.cloudflare.com/turnstile/v0/siteverify</code> from the Worker.</td></tr>
+      <tr><td>Failure behaviour</td><td>Submission rejected with a validation error; no row is written.</td></tr>
+      <tr><td>Additional limits</td><td>Field length caps, 5 submissions per hour per IP, and a honeypot-style timing check.</td></tr>
+      <tr><td>Admin protection</td><td>No Turnstile; PBKDF2 verification plus per-IP login throttling.</td></tr>
+      <tr><td>AirShare</td><td>No Turnstile; PIN-derived rooms and per-IP join limits.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note"><b>Not exercised during the audit.</b> A failed-challenge path was not forced against production, because doing so would require disabling the widget or replaying a token. The rejection branch is covered by unit tests, not by a live negative test.</div>
+
+  <h2 data-toc="R2, analytics and Pages">R2, analytics and Pages</h2>
+
+  <h3>R2 object storage</h3>
+  <p>R2 is <strong>not enabled</strong> on the account. <code>wrangler r2 bucket list</code> fails with Cloudflare error <code>10042</code> ("Please enable R2 through the Cloudflare Dashboard"). The <code>MEDIA</code> binding is commented out of <code>wrangler.jsonc</code>; <code>/media/*</code> and media uploads return <code>503</code>, and the admin UI hides the upload control.</p>
+  <p>Enabling R2 would require: creating the bucket, uncommenting the binding, redeploying, and re-enabling the upload path in the admin UI. The resume page already points at the repository-hosted PDF so it does not depend on R2.</p>
+
+  <h3>Cloudflare Web Analytics</h3>
+  <p>The CSP was updated in commit <code>8c9ea09</code> to allow <code>static.cloudflareinsights.com</code> and <code>cloudflareinsights.com</code>. However, fetching the production HTML on 31 October 2026 returned no beacon script, including on a cache-bypassing request. The dashboard's Web Analytics state could not be re-read with the available token.</p>
+  <p><span class="badge nottested">Unconfirmed</span> Whether visits are being recorded. Check the Web Analytics dashboard for a non-zero visit count, or add the JavaScript snippet manually if the automatic injection is off.</p>
+
+  <h3>Cloudflare Pages</h3>
+  <p>Pages is not part of the deployment path. The site is a Worker with Static Assets, deployed by <code>wrangler deploy</code> from GitHub Actions. No <code>*.pages.dev</code> hostname was observed or relied upon.</p>
+
+  <h2 data-toc="Change report for this engagement">Change report for this engagement</h2>
+  <p>All changes were code changes reviewed and committed to <code>Rishav0523/rishav-portfolio</code>, then deployed by the existing workflow. No dashboard setting was modified.</p>
+
+  <table>
+    <thead><tr><th>Commit</th><th>Change</th><th>Reason</th><th>Deployed</th></tr></thead>
+    <tbody>
+      <tr><td><code>5f71a29</code></td><td>Hash admin password at the Workers PBKDF2 ceiling (100,000 iterations).</td><td>Sign-in failed because the hash used an iteration count the runtime rejects.</td><td>30 Oct 21:31 UTC</td></tr>
+      <tr><td><code>605ca6c</code></td><td>Document setting the admin hash without a pipe.</td><td>A failed script piped into <code>wrangler secret put</code> stored an empty secret that reported as configured.</td><td>30 Oct 21:52 UTC</td></tr>
+      <tr><td><code>7c37911</code></td><td>Hide the resume upload when R2 is unavailable; point to the repository PDF.</td><td>R2 is not enabled; the upload control was a dead end.</td><td>30 Oct 22:08 UTC</td></tr>
+      <tr><td><code>01faae7</code></td><td>Harden headers and admin read paths found in the audit.</td><td>Security review findings.</td><td>31 Oct 00:03 UTC</td></tr>
+      <tr><td><code>8c9ea09</code></td><td>Allow the Web Analytics beacon in the CSP.</td><td>The beacon was blocked by <code>script-src</code> and <code>connect-src</code>.</td><td>31 Oct 00:11 UTC</td></tr>
+    </tbody>
+  </table>
+
+  <h3>What was deliberately not changed</h3>
+  <ul>
+    <li><strong>DNS records</strong> — apex and <code>www</code> already resolve correctly; no record was edited.</li>
+    <li><strong>DNSSEC</strong> — left unsigned; enabling it is a registrar-coordinated change and outside this scope.</li>
+    <li><strong>Always Use HTTPS</strong> — left off; enabling it is recommended but is a zone setting.</li>
+    <li><strong>Secrets</strong> — no value was created, read back or rotated; the stray secret is flagged for the owner.</li>
+    <li><strong>Turnstile, R2, Analytics, Pages</strong> — no configuration was created or modified.</li>
+    <li><strong>Billing and plan</strong> — untouched; the project stays on free-tier services.</li>
+  </ul>
+
+  <h2 data-toc="Follow-ups and residual risks">Follow-ups and residual risks</h2>
+  <table>
+    <thead><tr><th>Item</th><th>Priority</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td>Stray Turnstile-style secret</td><td>High</td><td>Confirm unused, then delete in Worker → Settings → Variables and Secrets.</td></tr>
+      <tr><td>Always Use HTTPS</td><td>High</td><td>Enable in SSL/TLS → Edge Certificates.</td></tr>
+      <tr><td>DNSSEC</td><td>Medium</td><td>Enable in DNS → Settings; note the DS record if the registrar changes.</td></tr>
+      <tr><td>DMARC/SPF inconsistency</td><td>Medium</td><td>Either add a sending mail provider with SPF, or relax the DMARC record; today the domain sends no mail.</td></tr>
+      <tr><td>Web Analytics confirmation</td><td>Low</td><td>Check the dashboard for visits, or add the beacon snippet explicitly.</td></tr>
+      <tr><td>R2 (optional)</td><td>Low</td><td>Only if media uploads are wanted; requires enabling R2 and uncommenting the binding.</td></tr>
+      <tr><td>Certificate renewal</td><td>Low</td><td>Cloudflare-managed; verify the certificate is auto-renewed before 28 Jan 2027.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="ok"><b>Verified healthy.</b> DNS resolution, TLS, Worker routing, static asset delivery, the custom 404, the API health check and the D1 binding all responded correctly on 31 October 2026.</div>
+
+  <h2 data-toc="Verification commands">Verification commands</h2>
+  <p>These are the exact commands used. Run them from the repository root with Wrangler authenticated as the account owner.</p>
+
+  <pre><code><span class="c"># Worker deployments and current version</span>
+npx wrangler deployments list --name rishav-portfolio
+npx wrangler deployments status --name rishav-portfolio
+
+<span class="c"># D1 metadata and row counts</span>
+npx wrangler d1 info rishav-portfolio
+npx wrangler d1 execute rishav-portfolio --remote --json \
+  --command "SELECT (SELECT COUNT(*) FROM contact_messages) AS messages,
+   (SELECT COUNT(*) FROM site_content) AS content;"
+
+<span class="c"># Secret names only — never prints values</span>
+npx wrangler secret list --name rishav-portfolio
+
+<span class="c"># R2 status (expected to fail with 10042 while R2 is disabled)</span>
+npx wrangler r2 bucket list</code></pre>
+
+  <pre><code><span class="c"># Public DNS: nameservers, DNSSEC, mail records</span>
+curl -s "https://cloudflare-dns.com/dns-query?name=rishavprasad.in&amp;type=NS" \
+  -H "accept: application/dns-json"
+curl -s "https://cloudflare-dns.com/dns-query?name=rishavprasad.in&amp;type=DS" \
+  -H "accept: application/dns-json"
+curl -s "https://cloudflare-dns.com/dns-query?name=_dmarc.rishavprasad.in&amp;type=TXT" \
+  -H "accept: application/dns-json"
+
+<span class="c"># Edge behaviour and headers</span>
+curl -s -o /dev/null -w "%{http_code} %{redirect_url}\n" http://rishavprasad.in/
+curl -s -o /dev/null -w "%{http_code} %{redirect_url}\n" https://www.rishavprasad.in/
+curl -s https://rishavprasad.in/api/health
+curl -sD - -o /dev/null https://rishavprasad.in/ | grep -i security</code></pre>
+
+  <p class="small">Record the date of any future run: deployment lists, certificate dates and row counts change. If a value conflicts with this report, the live command wins.</p>
+
+</main>
+</body>
+</html>

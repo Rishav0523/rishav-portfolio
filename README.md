@@ -10,10 +10,10 @@ over a direct WebRTC data channel. The earlier standalone Node.js app in `airsha
 optional self-hosted tool and is never bundled into the site.
 
 **Status: Gate 6 of 6 — complete**, plus browser-based AirShare. Live at `https://rishavprasad.in`
-with auto-deploy from `main`. Three owner actions remain (they are intentionally not automated
-because they use your credentials): set the production admin/contact secrets, add a GitHub token for
-the Publish button, and enable R2 if you want media uploads. See [DEPLOYMENT.md](DEPLOYMENT.md) and
-the checklist below.
+with auto-deploy from `main`. The production secrets are installed. Remaining owner actions:
+confirm the stored admin hash encodes exactly 100,000 iterations, enable Always Use HTTPS, remove an
+unused Turnstile-shaped secret, and confirm a two-phone AirShare transfer. The full documentation
+set, including the acceptance test, is in [documentation/](documentation/README.md).
 
 ---
 
@@ -291,10 +291,16 @@ physical two-device run (phone + laptop on a real Wi-Fi network) is still an own
 
 ## Needed from you
 
-- Set the three admin/contact secrets and (optionally) `GITHUB_TOKEN` — commands in
-  [DEPLOYMENT.md](DEPLOYMENT.md#3-set-production-secrets).
-- Enable R2 from the Cloudflare dashboard if you want uploaded media and PDF replacement.
+- Confirm admin sign-in works. If it does not, regenerate `ADMIN_PASSWORD_HASH` at exactly 100,000
+  iterations with `node scripts/hash-password.mjs "<password>"` and set it without piping the script
+  into Wrangler — see [DEPLOYMENT.md](DEPLOYMENT.md#3-set-production-secrets).
+- Enable **Always Use HTTPS** in Cloudflare → SSL/TLS → Edge Certificates.
+- Delete the unused Turnstile-shaped secret after confirming nothing reads it.
 - Run AirShare on two real devices on the same Wi-Fi: open `/airshare/app/`, create a room, join
   from the phone, and send a file both ways. Confirm it says "Connected on this Wi-Fi".
+- Enable R2 from the Cloudflare dashboard if you want uploaded media and PDF replacement.
 - **Skills**: confirm which of C++, NumPy, Pandas, Scikit-learn, Git and GitHub are current.
 - **New projects / certifications / award proofs**: add them in the dashboard as they arrive.
+
+The acceptance test and sign-off record are in
+[documentation/07_Project_Handover_Checklist.pdf](documentation/07_Project_Handover_Checklist.pdf).

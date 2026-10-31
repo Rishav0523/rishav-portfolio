@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>File Reference and Code Modification Guide · Rishav Prasad Portfolio</title>
+</head>
+<body>
+<script type="application/json" id="doc-meta">
+{"number":"06","title":"File Reference and Code Modification Guide","subtitle":"Every tracked file, what it does, and the exact files to open for each kind of change — with the rules this build imposes on edits.","version":"1.0","date":"31 October 2026","kind":"Project documentation"}
+</script>
+<main id="flow">
+
+  <h2 data-toc="How to use this guide">How to use this guide</h2>
+  <p class="lead">This document is the map from “I want to change something” to “these are the files, in this order.” It describes the repository as handed over at commit <code>8c9ea09</code> on 31 October 2026.</p>
+
+  <ul>
+    <li>Paths are relative to the repository root. Commands are for Git Bash from that root.</li>
+    <li>Numbered steps in a recipe are meant to be followed in order.</li>
+    <li>Line numbers are a convenience for this commit; search the named symbol if a line has moved.</li>
+    <li>No recipe requires editing generated output (<code>out/</code>) or touching Cloudflare resources unless it says so.</li>
+  </ul>
+
+  <h3>Two kinds of change</h3>
+  <table class="compact">
+    <thead><tr><th>Change</th><th>Where it is made</th><th>Deploy required?</th><th>Speed</th></tr></thead>
+    <tbody>
+      <tr><td>Wording, projects, skills, résumé summary, awards</td><td>Admin dashboard at <code>/admin/</code>, then <strong>Publish</strong></td><td>Yes, triggered by Publish</td><td>One workflow run</td></tr>
+      <tr><td>Layout, styling, new page, new endpoint, limits</td><td>Repository code</td><td>Yes, push to <code>main</code></td><td>Typecheck, test, build, deploy</td></tr>
+      <tr><td>Secrets (admin password, Turnstile, GitHub token)</td><td>Cloudflare Worker settings</td><td>No</td><td>Takes effect immediately</td></tr>
+      <tr><td>Domain, DNS, HTTPS policy, DNSSEC</td><td>Cloudflare dashboard and registrar</td><td>No code change</td><td>Minutes to hours</td></tr>
+      <tr><td>Database schema</td><td><code>migrations/</code> + a manual remote apply</td><td>Deploy code after the apply</td><td>Minutes</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note"><b>Content is not code.</b> The public pages read a build-time snapshot, <code>content/published.json</code>, which the admin dashboard refreshes through the API during a build. Editing markdown or JSON by hand does not update the live site; use the dashboard.</div>
+
+  <h3>Reading conventions</h3>
+  <ul>
+    <li>Paths such as <code>worker/index.ts</code> are click-level targets; a trailing <code>:12</code> is a line number at this commit.</li>
+    <li>Blue boxes are notes about how the system works; red boxes mark a trap that has already caused a real failure.</li>
+    <li>Figures are numbered by document; “Figure 6.1” is the first diagram in this document.</li>
+    <li>Behaviour labels used in the audit — Working, Partially Working, Requires External Configuration — are defined in document 04.</li>
+    <li>Commands assume Node.js 24 and the Wrangler pinned in the lockfile, run from the repository root.</li>
+    <li>A change is finished when typecheck, tests and build pass locally and the deploy workflow is green.</li>
+  </ul>
+
+  <div class="pb" aria-hidden="true"></div>
+  <h2 data-toc="Repository map">Repository map</h2>
+  <p>Excluding this documentation set, the repository tracks 86 files. Ten directories carry the whole system; the rest are configuration, assets and tests.</p>
+
+  <pre class="tree"><code>rishav-portfolio/
+├── app/                    Next.js App Router — every page and the stylesheet
+│   ├── (site)/             public pages (route group, no URL segment)
+│   ├── admin/              admin shell at /admin/
+│   ├── layout.tsx          root metadata, fonts, theme bootstrap, JSON-LD
+│   ├── globals.css         design tokens, utilities, dark mode, print rules
+│   ├── not-found.tsx       custom 404 (exported as out/404.html)
+│   ├── robots.ts           /robots.txt
+│   └── sitemap.ts          /sitemap.xml (route list is manual)
+├── components/             React components, grouped by surface
+│   ├── site/               nav, footer, theme toggle, contact form, resume print
+│   ├── admin/              dashboard, per-tab editors, form fields
+│   └── airshare/           browser AirShare app and its protocol constants
+├── lib/                    shared configuration and typed content access
+├── content/published.json  committed content snapshot used by the build
+├── worker/                 Cloudflare Worker (Hono): API, auth, validation, AirShare
+├── migrations/             D1 schema, applied manually and in order
+├── public/                 static files served verbatim (images, résumé, headers)
+├── scripts/                content fetch (prebuild) and password hashing
+├── tests/                  Vitest suites and three production browser suites
+├── airshare/               legacy Node LAN server, kept for reference and tests
+├── documentation/          this documentation set and its sources
+└── config                  next.config.ts, wrangler.jsonc, tsconfigs, package.json</code></pre>
+
+  <table class="compact">
+    <thead><tr><th>Directory</th><th>What lives there</th><th>Safe to edit?</th></tr></thead>
+    <tbody>
+      <tr><td><code>app/</code></td><td>Routes and global styling</td><td>Yes, with the recipes below</td></tr>
+      <tr><td><code>components/</code></td><td>Client and server components</td><td>Yes</td></tr>
+      <tr><td><code>lib/</code></td><td>Site configuration, content types, icon map</td><td>Yes</td></tr>
+      <tr><td><code>content/</code></td><td>Build snapshot; overwritten by CI builds</td><td>Only as a local fallback</td></tr>
+      <tr><td><code>worker/</code></td><td>The only server-side code</td><td>Yes, then typecheck the Worker project</td></tr>
+      <tr><td><code>migrations/</code></td><td>Applied SQL history</td><td>Add files only; never edit applied ones</td></tr>
+      <tr><td><code>public/</code></td><td>Files served without the Worker</td><td>Yes; filenames become public URLs</td></tr>
+      <tr><td><code>tests/</code></td><td>Automated checks against local code and production</td><td>Yes; keep counts in the docs in sync</td></tr>
+      <tr><td><code>airshare/</code></td><td>Legacy Node server, not deployed</td><td>Rarely; it exists for the protocol test</td></tr>
+    </tbody>
+  </table>
+
+  <h2 data-toc="How a request is served">How a request is served</h2>
+  <p>There are only three serving paths, and which one answers a URL determines where a change belongs.</p>
+
+  <figure class="diagram">
+    <svg viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Request routing">
+      <defs>
+        <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="#0081a7"/>
+        </marker>
+      </defs>
+      <rect x="14" y="102" width="150" height="88" rx="10" fill="#e7f4f7" stroke="#0081a7"/>
+      <text x="30" y="132" font-family="Manrope" font-size="13" font-weight="800" fill="#04202a">Browser</text>
+      <text x="30" y="152" font-family="Manrope" font-size="10.5" fill="#58707b">rishavprasad.in</text>
+      <text x="30" y="170" font-family="Manrope" font-size="10.5" fill="#58707b">HTML · JS · fetch</text>
+
+      <rect x="212" y="60" width="250" height="172" rx="12" fill="#f3f9fa" stroke="#00afb9"/>
+      <text x="230" y="88" font-family="Manrope" font-size="10.5" font-weight="800" fill="#58707b" letter-spacing="1.6">CLOUDFLARE EDGE</text>
+      <rect x="230" y="102" width="214" height="46" rx="8" fill="#fff" stroke="#b6dae2"/>
+      <text x="244" y="123" font-family="Manrope" font-size="11" font-weight="800" fill="#04202a">Static Assets · out/</text>
+      <text x="244" y="139" font-family="Manrope" font-size="9.5" fill="#58707b">no Worker invocation</text>
+      <rect x="230" y="158" width="214" height="46" rx="8" fill="#fff" stroke="#b6dae2"/>
+      <text x="244" y="179" font-family="Manrope" font-size="11" font-weight="800" fill="#04202a">Worker · /api/* · /media/*</text>
+      <text x="244" y="195" font-family="Manrope" font-size="9.5" fill="#58707b">Hono routes, auth, validation</text>
+
+      <rect x="510" y="34" width="176" height="76" rx="10" fill="#fdfcdc" stroke="#00afb9"/>
+      <text x="526" y="60" font-family="Manrope" font-size="11.5" font-weight="800" fill="#04202a">D1</text>
+      <text x="526" y="78" font-family="Manrope" font-size="9.5" fill="#3e5b52">content · messages</text>
+      <text x="526" y="93" font-family="Manrope" font-size="9.5" fill="#3e5b52">login attempts · AirShare</text>
+
+      <rect x="510" y="126" width="176" height="70" rx="10" fill="#fed9b7" stroke="#f07167"/>
+      <text x="526" y="152" font-family="Manrope" font-size="11.5" font-weight="800" fill="#04202a">R2 · disabled</text>
+      <text x="526" y="170" font-family="Manrope" font-size="9.5" fill="#5a3a2c">/media/* returns 503</text>
+      <text x="526" y="185" font-family="Manrope" font-size="9.5" fill="#5a3a2c">(uploads, résumé, images)</text>
+
+      <rect x="722" y="60" width="164" height="172" rx="12" fill="#eef8f2" stroke="#2f7d5b"/>
+      <text x="738" y="88" font-family="Manrope" font-size="10.5" font-weight="800" fill="#3c5f4e" letter-spacing="1.6">BUILD PIPELINE</text>
+      <text x="738" y="112" font-family="Manrope" font-size="10" fill="#04202a">GitHub Actions</text>
+      <text x="738" y="130" font-family="Manrope" font-size="10" fill="#04202a">next build → out/</text>
+      <text x="738" y="148" font-family="Manrope" font-size="10" fill="#04202a">wrangler deploy</text>
+      <text x="738" y="172" font-family="Manrope" font-size="9.5" fill="#3c5f4e">reads /api/content</text>
+      <text x="738" y="187" font-family="Manrope" font-size="9.5" fill="#3c5f4e">at build time</text>
+      <text x="738" y="208" font-family="Manrope" font-size="9.5" font-weight="800" fill="#3c5f4e">deploys the Worker</text>
+
+      <line x1="166" y1="146" x2="208" y2="146" stroke="#0081a7" stroke-width="2" marker-end="url(#a)"/>
+      <line x1="464" y1="125" x2="506" y2="84" stroke="#0081a7" stroke-width="2" marker-end="url(#a)"/>
+      <line x1="464" y1="167" x2="506" y2="161" stroke="#f07167" stroke-width="2" marker-end="url(#a)"/>
+    </svg>
+    <figcaption>Figure 6.1 — Static files never reach the Worker; API and media paths always do. Content crosses from D1 into the static files only during a build.</figcaption>
+  </figure>
+
+  <table class="compact">
+    <thead><tr><th>URL pattern</th><th>Answered by</th><th>Source files</th></tr></thead>
+    <tbody>
+      <tr><td><code>/</code>, <code>/about/</code>, <code>/projects/</code> …</td><td>Static Assets</td><td><code>app/(site)/*/page.tsx</code> → <code>out/</code></td></tr>
+      <tr><td><code>/admin/</code></td><td>Static shell + client calls</td><td><code>app/admin/page.tsx</code>, <code>components/admin/*</code></td></tr>
+      <tr><td><code>/airshare/app/</code></td><td>Static shell + client calls</td><td><code>app/(site)/airshare/app/page.tsx</code>, <code>components/airshare/*</code></td></tr>
+      <tr><td><code>/api/health</code>, <code>/api/content</code>, <code>/api/contact</code></td><td>Worker</td><td><code>worker/index.ts</code></td></tr>
+      <tr><td><code>/api/airshare/*</code></td><td>Worker</td><td><code>worker/airshare.ts</code></td></tr>
+      <tr><td><code>/api/admin/*</code></td><td>Worker, session cookie</td><td><code>worker/index.ts</code>, <code>worker/auth.ts</code></td></tr>
+      <tr><td><code>/media/*</code></td><td>Worker → R2</td><td><code>worker/index.ts</code> (503 while R2 is off)</td></tr>
+      <tr><td>Any unknown path</td><td>Static Assets 404 page</td><td><code>app/not-found.tsx</code> → <code>out/404.html</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2 data-toc="Configuration and build files">Configuration and build files</h2>
+  <table>
+    <thead><tr><th>File</th><th>What it controls</th><th>Touch it to…</th></tr></thead>
+    <tbody>
+      <tr><td><code>package.json</code></td><td>Scripts and dependency ranges</td><td>Run <code>npm run build</code>, <code>test</code>, <code>typecheck</code>, <code>deploy</code></td></tr>
+      <tr><td><code>package-lock.json</code></td><td>Exact versions; CI uses <code>npm ci</code></td><td>Change dependencies with <code>npm install</code>, never by hand</td></tr>
+      <tr><td><code>next.config.ts</code></td><td><code>output: "export"</code>, <code>trailingSlash</code>, unoptimized images</td><td>Change build output behaviour</td></tr>
+      <tr><td><code>tsconfig.json</code></td><td>App TypeScript, strict mode, <code>@/</code> path alias</td><td>Add path aliases or compiler options</td></tr>
+      <tr><td><code>worker/tsconfig.json</code></td><td>Worker TypeScript with Workers types</td><td>Worker-only compiler settings</td></tr>
+      <tr><td><code>postcss.config.mjs</code></td><td>Tailwind 4 PostCSS plugin</td><td>Rarely</td></tr>
+      <tr><td><code>vitest.config.ts</code></td><td>Unit test include patterns</td><td>Add a new test file location</td></tr>
+      <tr><td><code>wrangler.jsonc</code></td><td>Worker name, assets directory, routing, D1 binding, vars, custom domain</td><td>Change D1, domain, or enable R2</td></tr>
+      <tr><td><code>public/_headers</code></td><td>Security headers and Content-Security-Policy for static files</td><td>Allow a new external script or frame source</td></tr>
+      <tr><td><code>.github/workflows/deploy.yml</code></td><td>CI: install, typecheck, test, build, deploy</td><td>Change the pipeline or Node version</td></tr>
+      <tr><td><code>.env.example</code></td><td>Names of the values a local run needs</td><td>Document a new secret or variable</td></tr>
+      <tr><td><code>.gitignore</code></td><td>Excluded build output, local secrets, full database exports</td><td>Add a new local-only artifact</td></tr>
+    </tbody>
+  </table>
+
+  <div class="warn"><b><code>.env.example</code> is a list of names, not a source of values.</b> The site has no production <code>.env</code>. Worker variables are in <code>wrangler.jsonc</code>, secrets are stored by Cloudflare, and local development uses the git-ignored <code>.dev.vars</code>.</div>
+
+  <h2 data-toc="Pages, components and styles">Pages, components and styles</h2>
+  <h3>Routes in <code>app/</code></h3>
+  <table class="compact dense">
+    <thead><tr><th>File</th><th>Route</th><th>Contents</th></tr></thead>
+    <tbody>
+      <tr><td><code>app/(site)/page.tsx</code></td><td><code>/</code></td><td>Hero, portrait, focus areas, featured work</td></tr>
+      <tr><td><code>app/(site)/about/page.tsx</code></td><td><code>/about/</code></td><td>Bio, portrait, journey timeline, profile facts</td></tr>
+      <tr><td><code>app/(site)/education/page.tsx</code></td><td><code>/education/</code></td><td>Degree, board results, coursework notes</td></tr>
+      <tr><td><code>app/(site)/skills/page.tsx</code></td><td><code>/skills/</code></td><td>Skill groups and domains</td></tr>
+      <tr><td><code>app/(site)/projects/page.tsx</code></td><td><code>/projects/</code></td><td>Project cards with stack and status</td></tr>
+      <tr><td><code>app/(site)/experience/page.tsx</code></td><td><code>/experience/</code></td><td>Leadership roles and activities</td></tr>
+      <tr><td><code>app/(site)/achievements/page.tsx</code></td><td><code>/achievements/</code></td><td>Awards, achievements, certifications</td></tr>
+      <tr><td><code>app/(site)/resume/page.tsx</code></td><td><code>/resume/</code></td><td>Résumé summary, PDF link, print view</td></tr>
+      <tr><td><code>app/(site)/airshare/page.tsx</code></td><td><code>/airshare/</code></td><td>Explainer for the LAN transfer tool</td></tr>
+      <tr><td><code>app/(site)/airshare/app/page.tsx</code></td><td><code>/airshare/app/</code></td><td>Shell that mounts the client app</td></tr>
+      <tr><td><code>app/(site)/contact/page.tsx</code></td><td><code>/contact/</code></td><td>Contact form and direct email</td></tr>
+      <tr><td><code>app/admin/page.tsx</code></td><td><code>/admin/</code></td><td>Sign-in and dashboard shell</td></tr>
+      <tr><td><code>app/layout.tsx</code></td><td>all</td><td>Metadata, OG/Twitter tags, fonts, theme script, Person JSON-LD</td></tr>
+      <tr><td><code>app/(site)/layout.tsx</code></td><td>public</td><td>Skip link, navigation, footer</td></tr>
+      <tr><td><code>app/not-found.tsx</code></td><td>404</td><td>Custom not-found page</td></tr>
+      <tr><td><code>app/globals.css</code></td><td>all</td><td>Palette tokens, dark mode, buttons, layout utilities, print rules</td></tr>
+      <tr><td><code>app/robots.ts</code>, <code>app/sitemap.ts</code></td><td><code>/robots.txt</code>, <code>/sitemap.xml</code></td><td>Crawler rules; sitemap route list is written by hand</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Components</h3>
+  <table class="compact dense">
+    <thead><tr><th>File</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td><code>components/site/nav.tsx</code></td><td>Sticky header, desktop links from <code>site.nav</code>, mobile sheet</td></tr>
+      <tr><td><code>components/site/footer.tsx</code></td><td>Contact email, social links, small print</td></tr>
+      <tr><td><code>components/site/theme-toggle.tsx</code></td><td>Light/dark switch; stores <code>theme</code> in localStorage</td></tr>
+      <tr><td><code>components/site/contact-form.tsx</code></td><td>Turnstile widget, validation, POST to <code>/api/contact</code></td></tr>
+      <tr><td><code>components/site/print-resume.tsx</code></td><td>Print-only résumé layout used by <code>/resume/</code></td></tr>
+      <tr><td><code>components/site/timeline.tsx</code></td><td>Timeline list primitives</td></tr>
+      <tr><td><code>components/site/typing-roles.tsx</code></td><td>Rotating role text on the home hero</td></tr>
+      <tr><td><code>components/site/empty-state.tsx</code></td><td>Shared empty-state block</td></tr>
+      <tr><td><code>components/site/social-links.tsx</code>, <code>social-icon.tsx</code></td><td>Social links and icons from content</td></tr>
+      <tr><td><code>components/site/upcoming-page.tsx</code></td><td>Placeholder page component; not imported by any current route</td></tr>
+      <tr><td><code>components/admin/dashboard.tsx</code></td><td>Tabs, loading/saving state, all admin API calls, Publish</td></tr>
+      <tr><td><code>components/admin/content-editors.tsx</code></td><td>One editor per tab: profile, education, skills, experience, projects, achievements</td></tr>
+      <tr><td><code>components/admin/fields.tsx</code></td><td>Inputs, text areas, list editors, repeatable entry lists</td></tr>
+      <tr><td><code>components/airshare/airshare-app.tsx</code></td><td>PIN room UI, WebRTC peer handling, chunked transfer, progress</td></tr>
+      <tr><td><code>components/airshare/protocol.ts</code></td><td><code>CHUNK_BYTES</code> and <code>MAX_FILE_BYTES</code> shared by both sides</td></tr>
+      <tr><td><code>components/static-link.tsx</code></td><td>Plain <code>&lt;a&gt;</code> wrapper; the static export has no RSC payloads to prefetch</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note"><b>Keep <code>static-link</code>.</b> Next's client router expects RSC payload URLs that a static export does not emit, so <code>next/link</code> would 404 on navigation. Every internal link goes through the wrapper, which renders a normal anchor.</div>
+
+  <h3>Design tokens in <code>app/globals.css</code></h3>
+  <table class="compact">
+    <thead><tr><th>Token</th><th>Light</th><th>Use</th></tr></thead>
+    <tbody>
+      <tr><td><code>--cerulean</code></td><td><code>#0081A7</code></td><td>Primary accent, links beneath the surface, gradients</td></tr>
+      <tr><td><code>--teal</code></td><td><code>#00AFB9</code></td><td>Secondary accent, active underline, highlights</td></tr>
+      <tr><td><code>--cream</code></td><td><code>#FDFCDC</code></td><td>Page background</td></tr>
+      <tr><td><code>--apricot</code></td><td><code>#FED9B7</code></td><td>Warm tint blocks</td></tr>
+      <tr><td><code>--coral</code></td><td><code>#F07167</code></td><td>Calls to action, emphasis</td></tr>
+      <tr><td><code>--ink</code>, <code>--muted</code></td><td><code>#0B2E38</code>, <code>#4C666E</code></td><td>Body and secondary text</td></tr>
+      <tr><td><code>--bg</code>, <code>--surface</code>, <code>--card</code></td><td>cream, white, <code>#FFFDF2</code></td><td>Surfaces; all redefined under <code>.dark</code></td></tr>
+    </tbody>
+  </table>
+  <p>Typography is Manrope for body and UI, Fraunces for display headings, both loaded by <code>next/font</code> in <code>app/layout.tsx</code>. There is no other palette; components use the tokens rather than raw hex values.</p>
+
+  <h2 data-toc="Worker, data, scripts and tests">Worker, data, scripts and tests</h2>
+  <table class="compact">
+    <thead><tr><th>File</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td><code>worker/index.ts</code></td><td>Hono app: security middleware, public API, contact, admin gate, media, error handlers</td></tr>
+      <tr><td><code>worker/auth.ts</code></td><td>PBKDF2 verification at 100,000 iterations, HMAC-signed session cookies</td></tr>
+      <tr><td><code>worker/content-schema.ts</code></td><td>Validation of the whole content document, per-field limits, safe link checks</td></tr>
+      <tr><td><code>worker/airshare.ts</code></td><td>Rooms, presence, signalling, per-IP and per-peer rate limits</td></tr>
+      <tr><td><code>worker/env.ts</code></td><td>Typed bindings: <code>DB</code>, optional <code>MEDIA</code>, and the five variables/secrets</td></tr>
+      <tr><td><code>scripts/fetch-content.mjs</code></td><td>Prebuild: fetch <code>/api/content</code>, write <code>content/published.json</code>; strict in CI</td></tr>
+      <tr><td><code>scripts/hash-password.mjs</code></td><td>Print an <code>ADMIN_PASSWORD_HASH</code> line without writing the password to disk</td></tr>
+      <tr><td><code>migrations/0001_init.sql</code></td><td>Content, contact messages, media, login attempts</td></tr>
+      <tr><td><code>migrations/0002_airshare.sql</code></td><td>Peers, signals, join attempts; TTL indexes</td></tr>
+      <tr><td><code>tests/*.test.ts</code></td><td>40 Vitest checks: auth, content validation, AirShare protocol</td></tr>
+      <tr><td><code>tests/e2e.mjs</code></td><td>31 public-route checks against a base URL</td></tr>
+      <tr><td><code>tests/e2e-responsive.mjs</code></td><td>84 width and page-error checks at seven viewports</td></tr>
+      <tr><td><code>tests/e2e-airshare.mjs</code></td><td>11 signalling checks using a transient room</td></tr>
+      <tr><td><code>airshare/server.js</code>, <code>airshare/public/*</code></td><td>Original Node LAN server; not deployed, used by <code>airshare/test/airshare.test.js</code></td></tr>
+      <tr><td><code>public/</code></td><td>Portraits, OG image, favicon, résumé PDF, NPTEL certificate, <code>_headers</code></td></tr>
+    </tbody>
+  </table>
+
+  <p>The Worker's own constants sit at the top of each file and are the first place to look when behaviour looks surprising.</p>
+
+  <table class="compact dense">
+    <thead><tr><th>Setting</th><th>Value at handover</th><th>File</th></tr></thead>
+    <tbody>
+      <tr><td>Session lifetime</td><td>12 hours</td><td><code>worker/index.ts:10</code></td></tr>
+      <tr><td>Request body cap</td><td>1 MB</td><td><code>worker/index.ts:11</code></td></tr>
+      <tr><td>Contact limit</td><td>5 per hour per IP hash</td><td><code>worker/index.ts:12–13</code></td></tr>
+      <tr><td>Login limit</td><td>8 failures per 15 minutes per IP hash</td><td><code>worker/index.ts:14–15</code></td></tr>
+      <tr><td>Content document cap</td><td>512 KB, 50 projects, 100 awards/certifications</td><td><code>worker/content-schema.ts:33</code></td></tr>
+      <tr><td>Room size and TTL</td><td>8 peers, 90 s presence, 10 min signals</td><td><code>worker/airshare.ts:13–21</code></td></tr>
+      <tr><td>Transfer size</td><td>64 KB chunks, 100 MB per file</td><td><code>components/airshare/protocol.ts:1–2</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2 data-toc="The content model and its two copies">The content model and its two copies</h2>
+  <p>One JSON document describes everything a visitor reads outside of layout: socials, education, skills, experience, projects, achievements, awards, certifications, résumé summary and profile facts. It exists twice.</p>
+
+  <table class="compact">
+    <thead><tr><th>Copy</th><th>Location</th><th>Written by</th><th>Used by</th></tr></thead>
+    <tbody>
+      <tr><td>Live</td><td>D1 <code>site_content.document</code> (row <code>id = 1</code>)</td><td>Admin <strong>Save changes</strong></td><td><code>GET /api/content</code>, admin editor</td></tr>
+      <tr><td>Build snapshot</td><td><code>content/published.json</code></td><td><code>scripts/fetch-content.mjs</code></td><td>Every public page at build time</td></tr>
+    </tbody>
+  </table>
+
+  <figure class="diagram">
+    <svg viewBox="0 0 900 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Content flow">
+      <defs>
+        <marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="#0081a7"/>
+        </marker>
+      </defs>
+      <rect x="14" y="60" width="180" height="80" rx="10" fill="#e7f4f7" stroke="#0081a7"/>
+      <text x="30" y="88" font-family="Manrope" font-size="12" font-weight="800" fill="#04202a">Admin editor</text>
+      <text x="30" y="108" font-family="Manrope" font-size="10" fill="#58707b">PUT /api/admin/content</text>
+      <text x="30" y="124" font-family="Manrope" font-size="10" fill="#58707b">validated, 25 errors max</text>
+
+      <rect x="236" y="60" width="170" height="80" rx="10" fill="#fdfcdc" stroke="#00afb9"/>
+      <text x="252" y="88" font-family="Manrope" font-size="12" font-weight="800" fill="#04202a">D1</text>
+      <text x="252" y="108" font-family="Manrope" font-size="10" fill="#3e5b52">site_content.document</text>
+      <text x="252" y="124" font-family="Manrope" font-size="10" fill="#3e5b52">live immediately</text>
+
+      <rect x="448" y="60" width="190" height="80" rx="10" fill="#eef8f2" stroke="#2f7d5b"/>
+      <text x="464" y="88" font-family="Manrope" font-size="12" font-weight="800" fill="#04202a">GitHub Actions</text>
+      <text x="464" y="108" font-family="Manrope" font-size="10" fill="#3c5f4e">Publish → dispatch</text>
+      <text x="464" y="124" font-family="Manrope" font-size="10" fill="#3c5f4e">fetch /api/content</text>
+
+      <rect x="680" y="60" width="206" height="80" rx="10" fill="#fed9b7" stroke="#f07167"/>
+      <text x="696" y="88" font-family="Manrope" font-size="12" font-weight="800" fill="#04202a">published.json → out/</text>
+      <text x="696" y="108" font-family="Manrope" font-size="10" fill="#5a3a2c">committed snapshot +</text>
+      <text x="696" y="124" font-family="Manrope" font-size="10" fill="#5a3a2c">static HTML in the browser</text>
+
+      <line x1="194" y1="100" x2="232" y2="100" stroke="#0081a7" stroke-width="2" marker-end="url(#c)"/>
+      <line x1="406" y1="100" x2="444" y2="100" stroke="#0081a7" stroke-width="2" marker-end="url(#c)"/>
+      <line x1="638" y1="100" x2="676" y2="100" stroke="#0081a7" stroke-width="2" marker-end="url(#c)"/>
+      <text x="14" y="184" font-family="Manrope" font-size="10" fill="#58707b">Saving is not publishing: the admin preview reads D1, while the public site stays on the last build until the workflow finishes.</text>
+    </svg>
+    <figcaption>Figure 6.2 — Content path from editor to public HTML. The JSON file is an output of the build, not a source you maintain.</figcaption>
+  </figure>
+
+  <div class="warn"><b>Do not hand-edit <code>content/published.json</code> and expect the site to change.</b> CI overwrites it from the API on every build. Use the dashboard. A manual edit is only a local fallback for offline builds, and it must be mirrored in the admin or it will disappear.</div>
+
+  <h2 data-toc="Modification recipes">Modification recipes</h2>
+  <p>Each recipe names the files to open and the follow-up that keeps the docs and tests truthful.</p>
+
+  <h3>R1 · Change the palette or typography</h3>
+  <ol class="steps">
+    <li>Open <code>app/globals.css</code> and change the five palette tokens in <code>:root</code> (<code>--cerulean</code>, <code>--teal</code>, <code>--cream</code>, <code>--apricot</code>, <code>--coral</code>).</li>
+    <li>Adjust the derived surfaces in the same block: <code>--bg</code>, <code>--surface</code>, <code>--card</code>, <code>--ink</code>, <code>--muted</code>, <code>--line</code>, <code>--link</code>, <code>--nav</code>.</li>
+    <li>If dark mode should shift too, edit the <code>.dark</code> block underneath. Both blocks must stay complete; a missing token falls back to the light value.</li>
+    <li>Update the theme colour meta tags in <code>app/layout.tsx</code> (light <code>#FDFCDC</code>, dark <code>#04202A</code>) so mobile browser chrome matches.</li>
+    <li>Regenerate <code>public/images/og.jpg</code> if the social card shows the old palette.</li>
+    <li>Run <code>npm run build</code> and check one page in both themes at 375 px and 1440 px.</li>
+  </ol>
+
+  <h3>R2 · Add or rename a navigation link</h3>
+  <ol class="steps">
+    <li>Edit the <code>nav</code> array in <code>lib/site.ts</code> (line 22). Order matters; the header fits eight items at desktop width and collapses below 1280 px.</li>
+    <li>The <code>href</code> must match an exported route, with no trailing slash in the array (the site adds it in links and the router normalises it).</li>
+    <li>Add the same route to the <code>routes</code> list in <code>app/sitemap.ts</code> if it is a public page.</li>
+    <li>Rebuild and check the mobile menu, which renders the same array.</li>
+  </ol>
+
+  <h3>R3 · Add a new public page</h3>
+  <ol class="steps">
+    <li>Create <code>app/(site)/&lt;slug&gt;/page.tsx</code>. The route group does not appear in the URL.</li>
+    <li>Export <code>metadata</code> with a title and description; the root template appends the site name.</li>
+    <li>Read content through <code>lib/content.ts</code> rather than hardcoding strings, or use <code>site</code> from <code>lib/site.ts</code> for global text.</li>
+    <li>Add the route to <code>app/sitemap.ts</code> and, if it belongs in the header, to <code>site.nav</code>.</li>
+    <li>Add it to the route lists in <code>tests/e2e.mjs</code> and <code>tests/e2e-responsive.mjs</code> so the new page is covered.</li>
+    <li>Rebuild and confirm <code>out/&lt;slug&gt;/index.html</code> exists.</li>
+  </ol>
+
+  <h3>R4 · Change wording on the live site</h3>
+  <ol class="steps">
+    <li>Open <code>https://rishavprasad.in/admin/</code> and sign in.</li>
+    <li>Choose the matching tab: Profile, Education, Skills, Experience, Projects, Achievements, Resume.</li>
+    <li>Edit the fields and choose <strong>Save changes</strong>. The preview updates; the public site does not.</li>
+    <li>Choose <strong>Publish</strong>. A <code>content-published</code> workflow starts; wait for green, then hard-refresh.</li>
+  </ol>
+  <div class="note"><b>When the dashboard has no field for it</b> — a new section, a layout change — it is a code change, not a content change. Follow R1–R3 or add the field to <code>components/admin/content-editors.tsx</code>, the type in <code>lib/content.ts</code>, and the validator in <code>worker/content-schema.ts</code> together.</div>
+
+  <h3>R5 · Update the résumé PDF</h3>
+  <ol class="steps">
+    <li>Decide whether the new PDF is approved for publication; do not publish outdated or unapproved details.</li>
+    <li><strong>With R2 enabled:</strong> Admin → Resume → choose the PDF → upload. The Worker stores it under <code>/media/</code> and sets the link.</li>
+    <li><strong>Without R2:</strong> replace <code>public/resume/rishav-prasad-resume.pdf</code>, keep the same filename, and leave the content link unchanged.</li>
+    <li>Confirm the résumé page shows the new size and opens the file, and that the print view still fits one page.</li>
+  </ol>
+
+  <h3>R6 · Add a certificate or award</h3>
+  <ol class="steps">
+    <li>Put the PDF in <code>public/certifications/</code> using a lowercase hyphenated name.</li>
+    <li>Admin → Achievements → Certifications → <em>Add certification</em>.</li>
+    <li>Set <code>href</code> to <code>/certifications/&lt;file&gt;.pdf</code>. Relative paths are checked by the validator; external links must be <code>https</code>.</li>
+    <li>Save and publish. Open the link from <code>/achievements/</code> to confirm it resolves.</li>
+  </ol>
+
+  <h3>R7 · Enable R2 media</h3>
+  <ol class="steps">
+    <li>Enable R2 on the Cloudflare account and create the bucket <code>rishav-portfolio-media</code>.</li>
+    <li>Uncomment the <code>r2_buckets</code> block in <code>wrangler.jsonc</code> (line 29).</li>
+    <li>Deploy. <code>/media/missing</code> should now return 404 rather than 503.</li>
+    <li>Upload one image through Admin → Media and confirm it appears on the site when referenced.</li>
+  </ol>
+
+  <h3>R8 · Rotate the admin password</h3>
+  <ol class="steps">
+    <li>Run <code>node scripts/hash-password.mjs "&lt;new long password&gt;"</code> on its own and confirm the output starts with <code>pbkdf2_sha256$100000$</code>.</li>
+    <li>Run <code>npx wrangler secret put ADMIN_PASSWORD_HASH</code> and paste that line at the prompt. Never pipe the script into Wrangler: a refused password stores an empty secret.</li>
+    <li>Sign in with the new password. To end existing sessions, rotate <code>SESSION_SECRET</code> the same way.</li>
+    <li>No redeploy is needed; secrets are read at request time.</li>
+  </ol>
+
+  <h3>R9 · Change a rate limit or TTL</h3>
+  <ol class="steps">
+    <li>Find the constant at the top of <code>worker/index.ts</code> (contact, login, session) or <code>worker/airshare.ts</code> (rooms, signals).</li>
+    <li>Change the value and the test that asserts it in <code>tests/auth.test.ts</code>, <code>tests/content-schema.test.ts</code> or <code>tests/airshare-protocol.test.ts</code>.</li>
+    <li>Update <code>documentation/source/02-technical-specification.html</code> and the tables in document 04 so the numbers stay true.</li>
+    <li>Run <code>npm run typecheck &amp;&amp; npm test</code>, then deploy.</li>
+  </ol>
+
+  <h3>R10 · Add an API endpoint</h3>
+  <ol class="steps">
+    <li>Add the route to <code>worker/index.ts</code>. Public routes go on <code>app</code>; anything touching content, messages or media goes on the <code>admin</code> router, which enforces the session cookie.</li>
+    <li>Validate input with the helpers in <code>worker/content-schema.ts</code>; never build SQL strings — use <code>.bind()</code>.</li>
+    <li>Return <code>{ "error": "…" }</code> with a status code, matching the existing routes.</li>
+    <li>Add the route to <code>API_DOCUMENTATION.md</code> and a check to <code>tests/e2e.mjs</code>.</li>
+    <li>If it needs a new binding, add it to <code>worker/env.ts</code> and <code>wrangler.jsonc</code>.</li>
+  </ol>
+
+  <h3>R11 · Change the schema</h3>
+  <ol class="steps">
+    <li>Add <code>migrations/0003_&lt;name&gt;.sql</code>. Never edit <code>0001</code> or <code>0002</code>; they are already applied.</li>
+    <li>Apply it locally with <code>npx wrangler d1 migrations apply rishav-portfolio --local</code>.</li>
+    <li>Apply it to production with <code>--remote</code> <em>before</em> deploying code that needs the new column.</li>
+    <li>Export a backup first if the migration rewrites data.</li>
+  </ol>
+
+  <h3>R12 · Allow an external script or frame</h3>
+  <ol class="steps">
+    <li>Add the origin to the <code>script-src</code> or <code>frame-src</code> list in <code>public/_headers</code>.</li>
+    <li>Keep the existing Cloudflare entries; Turnstile runs in an iframe from <code>challenges.cloudflare.com</code>.</li>
+    <li>Deploy and retest the contact form and the admin sign-in, which are the two pages that rely on third-party scripts.</li>
+  </ol>
+
+  <h2 data-toc="Constraints every edit must respect">Constraints every edit must respect</h2>
+  <table class="compact">
+    <thead><tr><th>Constraint</th><th>Why it exists</th><th>What breaks if ignored</th></tr></thead>
+    <tbody>
+      <tr><td><code>output: "export"</code></td><td>The site is static files on Cloudflare, not a Node server</td><td>Server actions, route handlers and dynamic image optimisation do not exist at runtime</td></tr>
+      <tr><td><code>trailingSlash: true</code></td><td>Cloudflare serves folder indexes; the router is strict</td><td>Links without the slash 301 or 404 depending on the path</td></tr>
+      <tr><td>Plain anchors</td><td>No RSC payloads exist in the export</td><td><code>next/link</code> navigation fails in the browser</td></tr>
+      <tr><td>Build-time content fetch</td><td>Pages read <code>published.json</code>, not the API</td><td>Editing D1 without publishing leaves the public site stale</td></tr>
+      <tr><td>PBKDF2 ≤ 100,000 iterations</td><td>Cloudflare rejects higher counts in Workers</td><td>Every sign-in returns “Invalid credentials”</td></tr>
+      <tr><td>Secrets only in Cloudflare</td><td>The repository is public</td><td>A committed secret must be rotated, not deleted</td></tr>
+      <tr><td>No localhost or preview URLs in content</td><td>Content is public and permanent</td><td>Broken links and an unprofessional public page</td></tr>
+      <tr><td>AirShare uses no STUN/TURN servers</td><td>It is deliberately LAN-only and PIN-gated</td><td>The app would silently depend on third-party infrastructure</td></tr>
+      <tr><td>Personal data stays out of git</td><td>Contact messages and full D1 exports contain a real name and email</td><td>Irreversible publication of someone else's personal data</td></tr>
+    </tbody>
+  </table>
+
+  <div class="pb" aria-hidden="true"></div>
+  <h2 data-toc="Verifying a change">Verifying a change</h2>
+  <p>Run these in order before pushing. The first three are also what CI runs, so a green local run predicts a green deploy.</p>
+
+  <table class="compact">
+    <thead><tr><th>Command</th><th>Catches</th><th>Time</th></tr></thead>
+    <tbody>
+      <tr><td><code>npm run typecheck</code></td><td>Type errors in both the app and the Worker</td><td>Under a minute</td></tr>
+      <tr><td><code>npm test</code></td><td>Validation, auth and protocol regressions (40 checks)</td><td>Seconds</td></tr>
+      <tr><td><code>npm run build</code></td><td>Static export errors, missing routes, content fetch</td><td>About a minute</td></tr>
+      <tr><td><code>npx wrangler dev --port 8787</code></td><td>API behaviour with local D1 and <code>.dev.vars</code></td><td>Manual</td></tr>
+      <tr><td><code>E2E_BASE=https://rishavprasad.in node tests/e2e.mjs</code></td><td>Production routes after a deploy (31 checks)</td><td>Under a minute</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note"><b>Stop the local server before rebuilding.</b> Wrangler reads <code>out/</code> once at startup; rebuilding under a running server produces stale chunks and <code>ChunkLoadError</code>. Kill the whole Wrangler process tree, not one PID.</div>
+
+  <h2 data-toc="Common mistakes">Common mistakes</h2>
+  <table class="compact">
+    <thead><tr><th>Mistake</th><th>What you see</th><th>Fix</th></tr></thead>
+    <tbody>
+      <tr><td>Editing <code>published.json</code> by hand</td><td>Local change disappears after the next CI build</td><td>Make the change in Admin and publish</td></tr>
+      <tr><td>Piping the hash script into Wrangler</td><td>“Admin login is not configured yet” with the secret name present</td><td>Re-run <code>secret put</code> and paste the printed line</td></tr>
+      <tr><td>Generating a hash at 210,000 iterations</td><td>“Invalid credentials” for a correct password</td><td>Regenerate at 100,000</td></tr>
+      <tr><td>Using <code>next/link</code> or a relative image loader</td><td>Navigation 404s, images blank</td><td>Use <code>components/static-link</code> and files in <code>public/</code></td></tr>
+      <tr><td>Forgetting the sitemap entry</td><td>New page is live but unlisted</td><td>Add the route to <code>app/sitemap.ts</code></td></tr>
+      <tr><td>Editing an applied migration</td><td>Local and production schemas diverge</td><td>Add a new numbered migration</td></tr>
+      <tr><td>Adding a CDN script without a CSP entry</td><td>Script blocked on every page</td><td>Add the origin to <code>public/_headers</code></td></tr>
+      <tr><td>Testing Turnstile on <code>127.0.0.1</code></td><td>“Verification failed” locally only</td><td>Use <code>http://localhost:8787</code></td></tr>
+      <tr><td>Uploading a file over 5 MB to media</td><td>Upload rejected</td><td>Compress the file or raise the Worker limit deliberately</td></tr>
+    </tbody>
+  </table>
+
+  <h2 data-toc="Ownership and file sensitivity">Ownership and file sensitivity</h2>
+  <table class="compact">
+    <thead><tr><th>Path</th><th>Status</th><th>Handling</th></tr></thead>
+    <tbody>
+      <tr><td><code>.dev.vars</code></td><td>Git-ignored</td><td>Local secrets only; never copy into the repo or a document</td></tr>
+      <tr><td><code>backups/rishav-portfolio-*.sql</code></td><td>Git-ignored</td><td>Full export with personal rows; keep off the repository and share only through private storage</td></tr>
+      <tr><td><code>backups/schema-and-content-*.sql</code></td><td>Committed</td><td>Sanitized: schema, migration history and the public content row</td></tr>
+      <tr><td><code>content/published.json</code></td><td>Committed</td><td>Snapshot; regenerated by the build</td></tr>
+      <tr><td><code>out/</code>, <code>.next/</code>, <code>.wrangler/</code></td><td>Git-ignored</td><td>Build and local runtime output; safe to delete and rebuild</td></tr>
+      <tr><td><code>public/resume/</code>, <code>public/certifications/</code></td><td>Committed</td><td>Public files; check for outdated or private details before committing</td></tr>
+      <tr><td><code>documentation/</code></td><td>Committed</td><td>This set plus its HTML sources and build script</td></tr>
+    </tbody>
+  </table>
+
+  <p>The repository, Cloudflare account, GitHub account and domain registrar are all owned by Rishav Prasad. There is no shared, delegated or service account; CI uses a scoped API token stored as a repository secret.</p>
+
+</main>
+</body>
+</html>

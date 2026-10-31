@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Deployment and Recovery Guide · Rishav Prasad Portfolio</title>
+</head>
+<body>
+<script type="application/json" id="doc-meta">
+{"number":"05","title":"Deployment and Recovery Guide","subtitle":"How rishavprasad.in is built, deployed, verified, backed up and restored — with runbooks for the failures this stack can actually produce.","version":"1.0","date":"31 October 2026","kind":"Project documentation"}
+</script>
+<main id="flow">
+
+  <h2 data-toc="Deployment model">Deployment model</h2>
+  <p class="lead">The site is a Next.js static export attached to a Cloudflare Worker. Every deploy replaces both the Worker code and the static files it serves. Content lives separately in D1 and is snapshotted into the build.</p>
+
+  <h3>Two ways a deploy starts</h3>
+  <ul>
+    <li><strong>A push to <code>main</code></strong> — the normal code path. GitHub Actions typechecks, tests, builds and deploys.</li>
+    <li><strong>A content publish</strong> — the admin dashboard saves to D1, then asks GitHub to run the same workflow through a <code>repository_dispatch</code> event. The build fetches the new content before exporting.</li>
+  </ul>
+
+  <figure class="diagram">
+    <svg viewBox="0 0 900 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Deployment pipeline">
+      <defs>
+        <marker id="d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="#0081a7"/>
+        </marker>
+      </defs>
+      <text x="20" y="24" font-family="Manrope" font-size="11" font-weight="800" fill="#58707b" letter-spacing="2">TRIGGERS</text>
+      <rect x="20" y="40" width="240" height="76" rx="10" fill="#e7f4f7" stroke="#0081a7"/>
+      <text x="38" y="68" font-family="Manrope" font-size="14" font-weight="800" fill="#04202a">git push main</text>
+      <text x="38" y="90" font-family="Manrope" font-size="11" fill="#58707b">code, content files, config</text>
+      <text x="38" y="106" font-family="Manrope" font-size="11" fill="#58707b">or Actions → Run workflow</text>
+
+      <rect x="300" y="40" width="280" height="76" rx="10" fill="#fdfcdc" stroke="#00afb9"/>
+      <text x="318" y="68" font-family="Manrope" font-size="14" font-weight="800" fill="#04202a">Admin → Publish</text>
+      <text x="318" y="90" font-family="Manrope" font-size="11" fill="#3e5b52">D1 write, then GitHub dispatch</text>
+      <text x="318" y="106" font-family="Manrope" font-size="11" fill="#3e5b52">event: content-published</text>
+
+      <text x="20" y="160" font-family="Manrope" font-size="11" font-weight="800" fill="#58707b" letter-spacing="2">GITHUB ACTIONS · UBUNTU · NODE 24</text>
+      <rect x="20" y="176" width="860" height="112" rx="14" fill="#f3f9fa" stroke="#00afb9"/>
+      <g font-family="Manrope" font-size="11" fill="#04202a">
+        <rect x="40" y="196" width="130" height="70" rx="8" fill="#fff" stroke="#b6dae2"/>
+        <text x="56" y="220" font-weight="800">1 · install</text>
+        <text x="56" y="240">npm ci</text>
+        <text x="56" y="256">pinned lockfile</text>
+
+        <rect x="192" y="196" width="130" height="70" rx="8" fill="#fff" stroke="#b6dae2"/>
+        <text x="208" y="220" font-weight="800">2 · check</text>
+        <text x="208" y="240">typecheck</text>
+        <text x="208" y="256">vitest (40)</text>
+
+        <rect x="344" y="196" width="150" height="70" rx="8" fill="#fff" stroke="#b6dae2"/>
+        <text x="360" y="220" font-weight="800">3 · build</text>
+        <text x="360" y="240">fetch /api/content</text>
+        <text x="360" y="256">next build → out/</text>
+
+        <rect x="516" y="196" width="140" height="70" rx="8" fill="#fff" stroke="#b6dae2"/>
+        <text x="532" y="220" font-weight="800">4 · verify</text>
+        <text x="532" y="240">wrangler whoami</text>
+        <text x="532" y="256">right account?</text>
+
+        <rect x="678" y="196" width="180" height="70" rx="8" fill="#fff" stroke="#b6dae2"/>
+        <text x="694" y="220" font-weight="800">5 · deploy</text>
+        <text x="694" y="240">wrangler deploy</text>
+        <text x="694" y="256">Worker + assets</text>
+      </g>
+      <line x1="178" y1="231" x2="190" y2="231" stroke="#0081a7" stroke-width="2" marker-end="url(#d)"/>
+      <line x1="330" y1="231" x2="342" y2="231" stroke="#0081a7" stroke-width="2" marker-end="url(#d)"/>
+      <line x1="502" y1="231" x2="514" y2="231" stroke="#0081a7" stroke-width="2" marker-end="url(#d)"/>
+      <line x1="664" y1="231" x2="676" y2="231" stroke="#0081a7" stroke-width="2" marker-end="url(#d)"/>
+
+      <text x="20" y="326" font-family="Manrope" font-size="11" font-weight="800" fill="#58707b" letter-spacing="2">PRODUCTION</text>
+      <rect x="20" y="342" width="400" height="60" rx="10" fill="#eef8f2" stroke="#2f7d5b"/>
+      <text x="38" y="367" font-family="Manrope" font-size="14" font-weight="800" fill="#04202a">Worker rishav-portfolio</text>
+      <text x="38" y="387" font-family="Manrope" font-size="11" fill="#3c5f4e">static assets · /api/* · custom domain</text>
+
+      <rect x="460" y="342" width="420" height="60" rx="10" fill="#fed9b7" stroke="#f07167"/>
+      <text x="478" y="367" font-family="Manrope" font-size="14" font-weight="800" fill="#04202a">D1 rishav-portfolio</text>
+      <text x="478" y="387" font-family="Manrope" font-size="11" fill="#5a3a2c">not replaced by a deploy · backed up separately</text>
+
+      <line x1="140" y1="116" x2="140" y2="174" stroke="#0081a7" stroke-width="2" marker-end="url(#d)"/>
+      <line x1="440" y1="116" x2="440" y2="174" stroke="#0081a7" stroke-width="2" marker-end="url(#d)"/>
+      <line x1="768" y1="266" x2="300" y2="340" stroke="#2f7d5b" stroke-width="2" marker-end="url(#d)"/>
+    </svg>
+    <figcaption>Figure 5.1 — Build and deployment paths. A deploy never carries database rows; D1 is versioned only by backups and migrations.</figcaption>
+  </figure>
+
+  <div class="note"><b>Static-first resilience.</b> Cloudflare serves files from <code>out/</code> without invoking the Worker unless the path starts with <code>/api/</code> or <code>/media/</code>. If the Worker code errors, public pages normally continue to load; only API calls fail.</div>
+
+  <h2 data-toc="Prerequisites and credentials">Prerequisites and credentials</h2>
+  <table>
+    <thead><tr><th>Requirement</th><th>Detail</th><th>Where it lives</th></tr></thead>
+    <tbody>
+      <tr><td>Node.js</td><td>Version 24 is used in CI; 20+ is likely sufficient but was not tested below 24.</td><td>Developer machine / Actions runner</td></tr>
+      <tr><td>npm</td><td>Install with <code>npm ci</code> from the committed lockfile.</td><td>Repository</td></tr>
+      <tr><td>Wrangler</td><td>Pinned in <code>package-lock.json</code> (4.156.0 at handover).</td><td>Local <code>node_modules</code></td></tr>
+      <tr><td>Cloudflare login</td><td>OAuth login for manual commands, or an API token for CI.</td><td>Local Wrangler config / GitHub secrets</td></tr>
+      <tr><td>GitHub access</td><td>Owner of <code>Rishav0523/rishav-portfolio</code>.</td><td>GitHub account</td></tr>
+      <tr><td>Domain</td><td><code>rishavprasad.in</code> active in the same Cloudflare account.</td><td>Cloudflare dashboard / registrar</td></tr>
+      <tr><td>Worker secrets</td><td><code>ADMIN_PASSWORD_HASH</code>, <code>SESSION_SECRET</code>, <code>TURNSTILE_SECRET</code>, <code>GITHUB_TOKEN</code>.</td><td>Cloudflare Worker settings</td></tr>
+    </tbody>
+  </table>
+
+  <div class="warn"><b>Never commit credentials.</b> The repository must not contain the admin password, the admin hash, the session secret, the Turnstile secret, the GitHub token or the Cloudflare API token. <code>.dev.vars</code> is git-ignored and exists only for local development.</div>
+
+  <h2 data-toc="First-time provisioning">First-time provisioning</h2>
+  <p>These steps rebuild the environment from an empty Cloudflare account. They are recorded for disaster recovery and ownership transfer; the current environment is already provisioned.</p>
+
+  <ol class="steps">
+    <li><strong>Clone and install.</strong> <code>git clone https://github.com/Rishav0523/rishav-portfolio.git</code> then <code>npm ci</code>.</li>
+    <li><strong>Authenticate Wrangler.</strong> <code>npx wrangler login</code> and confirm the account with <code>npx wrangler whoami</code>.</li>
+    <li><strong>Create the D1 database.</strong> <code>npx wrangler d1 create rishav-portfolio</code>, then copy the returned <code>database_id</code> into <code>wrangler.jsonc</code>.</li>
+    <li><strong>Apply both migrations.</strong> <code>npx wrangler d1 migrations apply rishav-portfolio --remote</code>. This creates the eight tables.</li>
+    <li><strong>Set the four Worker secrets</strong> (next section). Do each one interactively; never pipe a command that might fail.</li>
+    <li><strong>Confirm variables.</strong> <code>wrangler.jsonc</code> must contain <code>SITE_URL=https://rishavprasad.in</code> and <code>GITHUB_REPO=Rishav0523/rishav-portfolio</code>.</li>
+    <li><strong>Deploy.</strong> <code>npm run build</code>, then <code>npx wrangler deploy</code>. Static assets upload with the Worker.</li>
+    <li><strong>Attach the domain.</strong> The <code>routes</code> entry requests <code>rishavprasad.in</code> as a custom domain; accept it in the dashboard if prompted.</li>
+    <li><strong>Create the www redirect.</strong> A Cloudflare Redirect Rule sends <code>www.rishavprasad.in</code> to the apex with a 301, preserving the query string. This is a dashboard rule, not a <code>_redirects</code> file.</li>
+    <li><strong>Set GitHub secrets</strong> <code>CLOUDFLARE_API_TOKEN</code> and <code>CLOUDFLARE_ACCOUNT_ID</code>, then push to <code>main</code> and confirm a green workflow.</li>
+  </ol>
+
+  <h3>Generating and installing secrets</h3>
+  <table class="compact">
+    <thead><tr><th>Secret</th><th>How to produce it</th><th>Install</th></tr></thead>
+    <tbody>
+      <tr><td><code>SESSION_SECRET</code></td><td>32 random bytes, base64url encoded.</td><td><code>npx wrangler secret put SESSION_SECRET</code></td></tr>
+      <tr><td><code>TURNSTILE_SECRET</code></td><td>Copy the secret key of the Turnstile widget (not the public site key).</td><td><code>npx wrangler secret put TURNSTILE_SECRET</code></td></tr>
+      <tr><td><code>ADMIN_PASSWORD_HASH</code></td><td><code>node scripts/hash-password.mjs "&lt;password&gt;"</code>; the output must start with <code>pbkdf2_sha256$100000$</code>.</td><td><code>npx wrangler secret put ADMIN_PASSWORD_HASH</code></td></tr>
+      <tr><td><code>GITHUB_TOKEN</code></td><td>Fine-grained token, repository <code>Rishav0523/rishav-portfolio</code>, Contents read and write, 90-day expiry.</td><td><code>npx wrangler secret put GITHUB_TOKEN</code></td></tr>
+    </tbody>
+  </table>
+
+  <div class="warn"><b>The empty-secret trap.</b> Piping the hash script directly into <code>wrangler secret put</code> is unsafe: if the script refuses a short password, the pipe delivers nothing, Wrangler stores an empty value, and Cloudflare still lists the secret name. Run the script on its own, confirm the printed line, then paste it at the prompt.</div>
+
+  <h2 data-toc="Routine deployment">Routine deployment</h2>
+  <h3>Deploy a code change</h3>
+  <pre><code><span class="c"># from the repository root, on main</span>
+git pull
+npm ci
+npm run typecheck
+npm test
+npm run build          <span class="c"># runs the content fetch first</span>
+git push origin main   <span class="c"># GitHub Actions deploys</span></code></pre>
+  <p>The CI workflow performs the same checks on a clean runner. Pushing is the normal delivery step; a manual <code>npx wrangler deploy</code> is for local experiments or emergency fixes.</p>
+
+  <h3>Deploy a content change</h3>
+  <ol class="steps">
+    <li>Sign in at <code>https://rishavprasad.in/admin/</code>.</li>
+    <li>Edit the relevant tab and choose <strong>Save changes</strong>. This writes the content document to D1; the public site does not change yet.</li>
+    <li>Choose <strong>Publish</strong>. The Worker calls GitHub <code>repository_dispatch</code> with <code>event_type=content-published</code>.</li>
+    <li>Watch the <code>deploy</code> workflow finish, then hard-refresh the public page. The build fetched the updated document.</li>
+  </ol>
+
+  <div class="note"><b>Why content needs a rebuild.</b> Public pages are static HTML. The content API is a build-time input: <code>scripts/fetch-content.mjs</code> writes <code>content/published.json</code> before <code>next build</code>. Saving without publishing changes D1 and the admin preview but not the public HTML.</div>
+
+  <h3>Schema changes</h3>
+  <p>Add a numbered SQL file to <code>migrations/</code>, then apply it manually <em>before</em> deploying code that depends on it:</p>
+  <pre><code>npx wrangler d1 migrations apply rishav-portfolio --remote</code></pre>
+  <p>CI does not run migrations because the deploy token is scoped to Workers and static assets. The command is idempotent and skips already-applied files.</p>
+
+  <h2 data-toc="CI workflow reference">CI workflow reference</h2>
+  <p><code>.github/workflows/deploy.yml</code> runs on a push to <code>main</code>, a <code>repository_dispatch</code> of type <code>content-published</code>, and manual dispatch. A concurrency group cancels an in-progress run for the same ref.</p>
+
+  <table class="compact">
+    <thead><tr><th>Step</th><th>What it does</th><th>Failure meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>actions/checkout</code>, <code>setup-node</code></td><td>Node 24 with npm cache.</td><td>Repository access or runner problem.</td></tr>
+      <tr><td><code>npm ci</code></td><td>Installs the exact lockfile.</td><td>Lockfile and <code>package.json</code> disagree.</td></tr>
+      <tr><td><code>npm run typecheck</code></td><td>App and Worker TypeScript projects.</td><td>A type error; nothing is deployed.</td></tr>
+      <tr><td><code>npm test</code></td><td>40 Vitest checks.</td><td>A unit regression; nothing is deployed.</td></tr>
+      <tr><td><code>npm run build</code></td><td>Fetches <code>/api/content</code> with <code>CONTENT_FETCH_STRICT=1</code>, then exports to <code>out/</code>.</td><td>The API is unreachable or the content fails validation. The build refuses to ship stale content.</td></tr>
+      <tr><td><code>wrangler whoami</code></td><td>Prints the authenticated account.</td><td>Bad or missing <code>CLOUDFLARE_API_TOKEN</code>.</td></tr>
+      <tr><td><code>wrangler deploy</code></td><td>Uploads Worker and assets.</td><td>Token lacks Workers Scripts edit or route access.</td></tr>
+      <tr><td>Failure summary</td><td>Appends the last Wrangler output to the run summary.</td><td>Read this first when a deploy fails with empty logs.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="warn"><b>Empty step logs mean secrets, not code.</b> If the workflow fails before any command output, check that <code>CLOUDFLARE_API_TOKEN</code> and <code>CLOUDFLARE_ACCOUNT_ID</code> still exist under Settings → Secrets and variables → Actions.</div>
+
+  <h2 data-toc="Configuration reference">Configuration reference</h2>
+  <table>
+    <thead><tr><th>Name</th><th>Kind</th><th>Value / purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>SITE_URL</code></td><td>Worker var + build env</td><td><code>https://rishavprasad.in</code>; canonical URLs, sitemap and the build-time fetch base.</td></tr>
+      <tr><td><code>GITHUB_REPO</code></td><td>Worker var</td><td><code>Rishav0523/rishav-portfolio</code>; target of the publish dispatch.</td></tr>
+      <tr><td><code>CONTENT_FETCH_STRICT</code></td><td>Build env</td><td><code>1</code> in CI; makes an unreachable content API fail the build.</td></tr>
+      <tr><td><code>ADMIN_PASSWORD_HASH</code></td><td>Secret</td><td>PBKDF2-SHA256 at exactly 100,000 iterations.</td></tr>
+      <tr><td><code>SESSION_SECRET</code></td><td>Secret</td><td>HMAC key for the 12-hour admin cookie.</td></tr>
+      <tr><td><code>TURNSTILE_SECRET</code></td><td>Secret</td><td>Server-side Turnstile verification.</td></tr>
+      <tr><td><code>GITHUB_TOKEN</code></td><td>Secret</td><td>Fine-grained token used only for repository dispatch.</td></tr>
+      <tr><td><code>MEDIA</code></td><td>R2 binding</td><td>Commented out; intentionally absent until R2 is enabled.</td></tr>
+    </tbody>
+  </table>
+  <p class="tbl-note">There is no production <code>.env</code> file. Worker variables live in <code>wrangler.jsonc</code>, secrets in Cloudflare, and CI values in the workflow or repository settings.</p>
+
+  <h2 data-toc="Local development">Local development</h2>
+  <p>The local stack serves the last build in <code>out/</code> and a local D1 database. Manage it carefully: Wrangler reads <code>out/</code> only at startup, and orphaned <code>workerd</code> processes keep the local database locked.</p>
+
+  <pre><code><span class="c"># once: create the local schema</span>
+npx wrangler d1 migrations apply rishav-portfolio --local
+
+<span class="c"># build, then start exactly one server</span>
+npm run build
+npx wrangler dev --port 8787</code></pre>
+
+  <p><code>.dev.vars</code> (git-ignored) supplies the local secrets:</p>
+  <pre><code>TURNSTILE_SECRET=...
+SESSION_SECRET=...
+ADMIN_PASSWORD_HASH=pbkdf2_sha256$100000$...</code></pre>
+
+  <div class="warn"><b>Two failure modes that waste hours.</b> (1) Stopping the Wrangler task can leave orphaned <code>workerd.exe</code> children holding port 8787 and the SQLite file; kill the whole process tree, not one PID, and confirm the port is free. (2) Rebuilding while the server runs serves stale chunks and produces <code>ChunkLoadError</code> or HTML in place of JavaScript; stop the server before every rebuild.</div>
+
+  <p>Turnstile widgets are bound to hostnames. Use <code>http://localhost:8787</code> for the widget; <code>127.0.0.1</code> is not an allowed hostname in the widget configuration.</p>
+
+  <h2 data-toc="Post-deploy verification">Post-deploy verification</h2>
+  <p>Run these checks after every production deploy. They take about two minutes and catch the failures this stack has actually produced.</p>
+
+  <table class="compact">
+    <thead><tr><th>Check</th><th>Command / action</th><th>Expected</th></tr></thead>
+    <tbody>
+      <tr><td>Health and database</td><td><code>curl -s https://rishavprasad.in/api/health</code></td><td><code>{"ok":true,"service":"portfolio-api","database":"ok"}</code></td></tr>
+      <tr><td>Home page</td><td><code>curl -s -o /dev/null -w "%{http_code}" https://rishavprasad.in/</code></td><td><code>200</code></td></tr>
+      <tr><td>Unknown path</td><td><code>curl -s -o /dev/null -w "%{http_code}" https://rishavprasad.in/nope/</code></td><td><code>404</code></td></tr>
+      <tr><td>Content API</td><td><code>curl -s https://rishavprasad.in/api/content | head -c 80</code></td><td>JSON beginning with <code>{"version":1</code></td></tr>
+      <tr><td>Admin gate</td><td><code>curl -s -o /dev/null -w "%{http_code}" https://rishavprasad.in/api/admin/content</code></td><td><code>401</code></td></tr>
+      <tr><td>R2 state</td><td><code>curl -s -o /dev/null -w "%{http_code}" https://rishavprasad.in/media/x</code></td><td><code>503</code> while R2 is disabled</td></tr>
+      <tr><td>Public routes</td><td><code>E2E_BASE=https://rishavprasad.in node tests/e2e.mjs</code></td><td>31 passed, 0 failed</td></tr>
+      <tr><td>Responsive sweep</td><td><code>E2E_BASE=https://rishavprasad.in node tests/e2e-responsive.mjs</code></td><td>84 passed, 0 failed</td></tr>
+      <tr><td>AirShare</td><td><code>E2E_BASE=https://rishavprasad.in node tests/e2e-airshare.mjs</code></td><td>11 passed, 0 failed</td></tr>
+      <tr><td>Admin sign-in</td><td>Open <code>/admin/</code> and sign in</td><td>Dashboard loads; Save and Publish work</td></tr>
+    </tbody>
+  </table>
+
+  <h2 data-toc="Backup strategy">Backup strategy</h2>
+  <p>D1 holds the only non-reproducible data: contact messages, the content document, login throttling rows and AirShare signalling rows. The code and public content are in git; the database is not.</p>
+
+  <h3>What was produced at handover</h3>
+  <table>
+    <thead><tr><th>File</th><th class="num">Size</th><th>Contents</th><th>Committed?</th></tr></thead>
+    <tbody>
+      <tr><td><code>backups/rishav-portfolio-2026-10-31.sql</code></td><td class="num">28.4 KB</td><td>Full export: schema, migrations, content and all personal rows.</td><td>No — git-ignored</td></tr>
+      <tr><td><code>backups/schema-and-content-2026-10-31.sql</code></td><td class="num">11.3 KB</td><td>Schema, migration history and the public content row only.</td><td>Yes</td></tr>
+    </tbody>
+  </table>
+  <p class="tbl-note">The sanitized file was verified by executing it into an empty SQLite database; it restores one <code>site_content</code> row of 8,767 bytes. SHA-256 of the committed file: <code>fc594cd9…c171d77b</code>.</p>
+
+  <div class="warn"><b>Why the full backup is not in GitHub.</b> It contains a real contact message, its sender's name and email, and login/AirShare metadata. Committing it to a public repository would publish personal data. Keep the full export on encrypted local storage or a private drive, never in the repo.</div>
+
+  <h3>Producing a new backup</h3>
+  <pre><code><span class="c"># Full export — personal data inside; store privately</span>
+npx wrangler d1 export rishav-portfolio --remote \
+  --output backups/rishav-portfolio-YYYY-MM-DD.sql
+
+<span class="c"># Check it is not empty and contains the tables</span>
+grep -c "INSERT INTO" backups/rishav-portfolio-YYYY-MM-DD.sql
+grep -oE "INSERT INTO \"[a-z_]+\"" backups/rishav-portfolio-YYYY-MM-DD.sql | sort -u</code></pre>
+
+  <div class="note"><b>Export briefly affects the database.</b> Wrangler warns that queries may be unavailable while the export runs. It took seconds for this 94 kB database. Run exports at a quiet time and avoid doing one during a deploy or a content edit.</div>
+
+  <h3>Recommended schedule</h3>
+  <ul>
+    <li><strong>Before</strong> any migration, bulk content change or secret rotation.</li>
+    <li><strong>Monthly</strong> if contact messages matter; the content document is also recoverable from a git build snapshot.</li>
+    <li><strong>After</strong> any unexplained data loss or a suspicious admin session.</li>
+    <li>Keep at least three generations, one of them off the machine.</li>
+  </ul>
+
+  <h2 data-toc="Restore procedure">Restore procedure</h2>
+  <p>There are two restore scenarios. Choose deliberately; the full export overwrites rows and can conflict with data created after the backup.</p>
+
+  <h3>Restore the public content only</h3>
+  <p>The sanitized backup is safe for a fresh database or for repairing one content row. To restore the document into the current database without touching messages:</p>
+  <pre><code>npx wrangler d1 execute rishav-portfolio --remote \
+  --file backups/schema-and-content-2026-10-31.sql</code></pre>
+  <p>If the database already contains the same row, SQLite will reject the duplicate primary key. In that case, extract just the <code>site_content</code> statement into a temporary file, or update the row through the admin dashboard, then publish.</p>
+
+  <h3>Rebuild the database from a full export</h3>
+  <ol class="steps">
+    <li>Download the chosen export and confirm it is the intended date.</li>
+    <li>Create a new database: <code>npx wrangler d1 create rishav-portfolio-restore</code>.</li>
+    <li>Import: <code>npx wrangler d1 execute rishav-portfolio-restore --remote --file backups/rishav-portfolio-YYYY-MM-DD.sql</code>.</li>
+    <li>Spot-check: <code>SELECT COUNT(*) FROM site_content;</code> and <code>SELECT COUNT(*) FROM contact_messages;</code> on the new database.</li>
+    <li>Point the <code>DB</code> binding in <code>wrangler.jsonc</code> at the new <code>database_id</code>, deploy, and verify <code>/api/health</code>.</li>
+    <li>Keep the old database until the new one has served correctly for a day, then delete it deliberately.</li>
+  </ol>
+
+  <div class="warn"><b>Never import a full export into a populated database as a shortcut.</b> Duplicate primary keys and <code>UNIQUE</code> constraints will abort partway, and you may not know which rows landed. Restore into a new database and switch the binding, or restore only the statements you need.</div>
+
+  <h3>Verify a backup without touching production</h3>
+  <p>The sanitized file can be checked in any SQLite client. The handover check executed the script into an in-memory database and confirmed one content row of 8,767 bytes. Do the same for a new export before trusting it.</p>
+
+  <h2 data-toc="Rollback and recovery">Rollback and recovery</h2>
+  <h3>Roll back a bad deploy</h3>
+  <pre><code>npx wrangler deployments list --name rishav-portfolio
+npx wrangler rollback &lt;deployment-or-version-id&gt;</code></pre>
+  <p>A rollback restores the Worker code and the static assets attached to that version. It does <strong>not</strong> roll back D1. If a content edit caused the problem, fix the content and publish again; rollback does not revert the database.</p>
+
+  <h3>Runbook: site returns errors or is blank</h3>
+  <ol class="steps">
+    <li>Check <code>https://rishavprasad.in/api/health</code> and the home page separately. If the home page is fine but the API fails, the issue is the Worker or D1, not the assets.</li>
+    <li>Open Cloudflare → Workers → <code>rishav-portfolio</code> → Deployments and confirm the expected version is at 100%.</li>
+    <li>Inspect logs with <code>npx wrangler tail rishav-portfolio</code> while reproducing the request.</li>
+    <li>If the latest deploy is at fault, roll back to the previous deployment id.</li>
+    <li>If the rollback page is also wrong, re-deploy the last known-good commit from GitHub Actions.</li>
+  </ol>
+
+  <h3>Runbook: API returns 503</h3>
+  <table class="compact">
+    <thead><tr><th>Symptom</th><th>Likely cause</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td>Health says <code>database:"unavailable"</code></td><td>D1 binding or database outage.</td><td>Confirm the binding id in <code>wrangler.jsonc</code>; check D1 status in the dashboard; retry.</td></tr>
+      <tr><td>Admin says "not configured"</td><td><code>ADMIN_PASSWORD_HASH</code> or <code>SESSION_SECRET</code> missing or empty.</td><td>Reinstall the secrets interactively; no redeploy needed.</td></tr>
+      <tr><td>Contact says "not configured"</td><td><code>TURNSTILE_SECRET</code> missing.</td><td>Reinstall the Turnstile secret.</td></tr>
+      <tr><td>Publish says "not configured"</td><td><code>GITHUB_TOKEN</code> missing or expired.</td><td>Create a new fine-grained token and replace the secret.</td></tr>
+      <tr><td>Media returns 503</td><td>R2 disabled or binding commented out.</td><td>Expected state; enable R2 only if uploads are wanted.</td></tr>
+      <tr><td>Everything returns a Worker error page</td><td>Unhandled exception in the Worker.</td><td>Tail the logs, roll back, then fix forward.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Runbook: admin lockout</h3>
+  <ol class="steps">
+    <li>Generate a new hash with <code>node scripts/hash-password.mjs "&lt;new long password&gt;"</code>; confirm it starts with <code>pbkdf2_sha256$100000$</code>.</li>
+    <li>Run <code>npx wrangler secret put ADMIN_PASSWORD_HASH</code> and paste the line. No redeploy is required.</li>
+    <li>If sessions must be invalidated too, rotate <code>SESSION_SECRET</code>; every admin is signed out immediately.</li>
+    <li>If login still returns 429, wait 15 minutes for the per-IP attempt window to clear.</li>
+    <li>If login returns 503, the environment reports a missing secret; list names with <code>npx wrangler secret list</code>.</li>
+  </ol>
+
+  <h3>Runbook: lost repository or machine</h3>
+  <ol class="steps">
+    <li>Clone <code>https://github.com/Rishav0523/rishav-portfolio.git</code> on a new machine.</li>
+    <li><code>npm ci</code> and restore <code>.dev.vars</code> from the password manager if local development is needed.</li>
+    <li>If GitHub is also lost, restore from a local clone and re-create the repository; update <code>GITHUB_REPO</code> and the <code>GITHUB_TOKEN</code> secret.</li>
+    <li>Restore D1 from the latest full export into a new database as described above.</li>
+    <li>Re-add the two GitHub Actions secrets and run the workflow manually.</li>
+  </ol>
+
+  <h3>Runbook: domain, DNS or certificate</h3>
+  <ul>
+    <li><strong>Nameservers changed?</strong> The zone stops resolving if the registrar no longer delegates to <code>alla</code> and <code>koa.ns.cloudflare.com</code>. Restore the delegation in the registrar.</li>
+    <li><strong>Certificate expired?</strong> Cloudflare-managed certificates renew automatically; if the certificate shows expired, check the custom domain status and re-issue it from SSL/TLS → Edge Certificates.</li>
+    <li><strong>www stopped redirecting?</strong> The Redirect Rule is dashboard state, not repository state. Recreate it as a 301 to <code>https://rishavprasad.in</code> preserving the query string.</li>
+    <li><strong>DNSSEC?</strong> It is currently unsigned. If you enable it later and then change registrars, remove the DS record first or the domain can stop resolving.</li>
+  </ul>
+
+  <h2 data-toc="Monitoring and logs">Monitoring and logs</h2>
+  <table class="compact">
+    <thead><tr><th>What</th><th>How to see it</th><th>Retention</th></tr></thead>
+    <tbody>
+      <tr><td>Worker exceptions</td><td><code>npx wrangler tail rishav-portfolio</code></td><td>Live stream only</td></tr>
+      <tr><td>Deploy history</td><td><code>npx wrangler deployments list</code> or the dashboard</td><td>Cloudflare account history</td></tr>
+      <tr><td>CI results</td><td>GitHub Actions tab</td><td>GitHub defaults</td></tr>
+      <tr><td>D1 usage</td><td><code>npx wrangler d1 info rishav-portfolio</code></td><td>Rolling 24-hour metrics</td></tr>
+      <tr><td>Contact messages</td><td>Admin → Messages</td><td>Until deleted</td></tr>
+      <tr><td>Uptime / errors</td><td>No external monitor configured</td><td>—</td></tr>
+    </tbody>
+  </table>
+  <p class="tbl-note">For a personal site this is proportionate, but nothing will alert the owner when the site is down. A free uptime checker on <code>/api/health</code> is the smallest useful addition if that matters.</p>
+
+  <div class="pb" aria-hidden="true"></div>
+  <h2 data-toc="Running the test suites">Running the test suites</h2>
+  <p>These commands reproduce the results in document 04. No local server is needed for the production runs.</p>
+  <pre><code><span class="c"># static checks</span>
+npm run typecheck
+npm test
+
+<span class="c"># production browser suites</span>
+E2E_BASE=https://rishavprasad.in node tests/e2e.mjs
+E2E_BASE=https://rishavprasad.in node tests/e2e-responsive.mjs
+E2E_BASE=https://rishavprasad.in node tests/e2e-airshare.mjs
+
+<span class="c"># legacy Node LAN server</span>
+node --test airshare/test/airshare.test.js</code></pre>
+
+  <table class="compact">
+    <thead><tr><th>Command</th><th class="num">Expected</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>npm test</code></td><td class="num">40 passed</td><td>3 suites; no network.</td></tr>
+      <tr><td><code>node --test airshare/test/airshare.test.js</code></td><td class="num">8 passed</td><td>Starts a local server on an ephemeral port.</td></tr>
+      <tr><td><code>node tests/e2e.mjs</code></td><td class="num">31 passed</td><td>Set <code>E2E_BASE</code> to production; admin sign-in is skipped without a local password.</td></tr>
+      <tr><td><code>node tests/e2e-responsive.mjs</code></td><td class="num">84 passed</td><td>77 route/width checks plus 7 page-error checks.</td></tr>
+      <tr><td><code>node tests/e2e-airshare.mjs</code></td><td class="num">11 passed</td><td>Creates a transient room; rows expire.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note"><b>AirShare tests write to production D1.</b> They create presence, signal and join-attempt rows through the public API. The rows expire by TTL; the join counter persists as a rate-limit record. Run them when a few extra join attempts will not matter.</div>
+
+  <h2 data-toc="Handover notes">Handover notes</h2>
+  <ul>
+    <li>Everything runs on free-tier Cloudflare and GitHub services; there is no paid dependency in the build or runtime.</li>
+    <li>The owner's GitHub account, Cloudflare account and registrar control the site. There is no shared or delegated account.</li>
+    <li>The full database export is the only artifact that must not be published. Store it privately and rotate it after any contact message you would not want exposed.</li>
+    <li>Always Use HTTPS, DNSSEC and the stray secret are dashboard actions tracked in documents 03, 04 and 07.</li>
+  </ul>
+
+</main>
+</body>
+</html>

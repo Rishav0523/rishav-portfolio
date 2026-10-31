@@ -14,3 +14,8 @@ tsconfig.tsbuildinfo
 content/site.json
 airshare/node_modules/
 airshare/dist/
+
+# Full D1 exports contain contact messages and must stay local. Only the
+# sanitized schema-and-content export is committed.
+backups/*
+!backups/schema-and-content-*.sql

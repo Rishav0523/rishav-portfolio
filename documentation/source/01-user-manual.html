@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>User Manual · Rishav Prasad Portfolio</title>
+</head>
+<body>
+<script type="application/json" id="doc-meta">
+{"number":"01","title":"User Manual","subtitle":"How visitors, the owner and AirShare users work with rishavprasad.in — every page, the contact form, file transfer and the private content dashboard.","version":"1.0","date":"31 October 2026","kind":"Project documentation"}
+</script>
+<main id="flow">
+
+  <h2 data-toc="About this manual">About this manual</h2>
+  <p class="lead">This manual explains how the public portfolio behaves and how its owner operates it day to day. It is written for the site owner first, and for anyone who takes over maintenance later.</p>
+  <p>The site is a static Next.js export served by Cloudflare Workers, with a small API for the contact form, content editing and AirShare. Public pages are generated at build time; the content dashboard writes to a Cloudflare D1 database, and a publish action asks GitHub to rebuild the site.</p>
+
+  <h3>Who this manual is for</h3>
+  <ul>
+    <li><b>Visitors</b> — read sections 02 to 05 and 07 to learn what each page offers.</li>
+    <li><b>The owner</b> — read section 06 for the dashboard workflow and sections 08 to 09 for troubleshooting and data handling.</li>
+    <li><b>A future maintainer</b> — start here, then read the Technical Specification (02) and the File Reference (06).</li>
+  </ul>
+
+  <h3>Status labels used across the documentation</h3>
+  <table class="compact">
+    <thead><tr><th>Label</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge working">Working</span></td><td>Implemented and verified in this engagement, with evidence.</td></tr>
+      <tr><td><span class="badge partial">Partially working</span></td><td>Works, but with a known constraint or an unverified path.</td></tr>
+      <tr><td><span class="badge notimpl">Not implemented</span></td><td>Not built; no claim is made that it exists.</td></tr>
+      <tr><td><span class="badge owner">Requires configuration</span></td><td>Depends on an account setting, secret or external service.</td></tr>
+      <tr><td><span class="badge nottested">Not tested</span></td><td>Cannot be verified without credentials or a manual action by the owner.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>What is deliberately not covered</h3>
+  <p>Server-side Cloudflare account settings that the local API credentials cannot read are reported as “requires verification” rather than guessed. The admin dashboard's signed-in screens are not shown in this package because they need the owner's password; the sign-in screen is shown instead.</p>
+
+  <h2 data-toc="The portfolio at a glance">The portfolio at a glance</h2>
+  <p>The site has a single public navigation with eight sections, a contact page, an AirShare guide and a browser app. Every page is server-rendered to static HTML at build time and hydrated with React for theme switching and interactive widgets.</p>
+
+  <figure class="shot">
+    <img src="screenshots/home.png" alt="Home page of rishavprasad.in in light mode">
+    <figcaption><b>Figure 1.</b> The home page at a desktop width (1280 × 800). The portrait, role animation and leadership cards are part of the static build.</figcaption>
+  </figure>
+
+  <h3>Route map</h3>
+  <table class="compact">
+    <thead><tr><th>Address</th><th>Page</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>/</code></td><td>Home</td><td>Introduction, focus areas, leadership highlights and contact call to action.</td></tr>
+      <tr><td><code>/about/</code></td><td>About</td><td>Biography, journey timeline and short personal summary.</td></tr>
+      <tr><td><code>/education/</code></td><td>Education</td><td>B.Tech and school records with scores.</td></tr>
+      <tr><td><code>/projects/</code></td><td>Projects</td><td>Project cards with summaries, stacks and links.</td></tr>
+      <tr><td><code>/skills/</code></td><td>Skills</td><td>Three grouped skill areas.</td></tr>
+      <tr><td><code>/experience/</code></td><td>Experience</td><td>Leadership roles and responsibilities.</td></tr>
+      <tr><td><code>/achievements/</code></td><td>Achievements</td><td>Leadership records, awards and certifications.</td></tr>
+      <tr><td><code>/resume/</code></td><td>Resume</td><td>On-page resume summary with the approved PDF.</td></tr>
+      <tr><td><code>/airshare/</code></td><td>AirShare guide</td><td>Explains the LAN-only transfer tool and its limits.</td></tr>
+      <tr><td><code>/airshare/app/</code></td><td>AirShare app</td><td>PIN-gated browser-to-browser file and message transfer.</td></tr>
+      <tr><td><code>/contact/</code></td><td>Contact</td><td>Message form with Cloudflare Turnstile, plus email.</td></tr>
+      <tr><td><code>/admin/</code></td><td>Admin</td><td>Private content dashboard; excluded from search engines.</td></tr>
+      <tr><td>any unknown path</td><td>Not found</td><td>Custom 404 page with links back into the site.</td></tr>
+    </tbody>
+  </table>
+  <p class="tbl-note">The sitemap lists the eleven public URLs; <code>/admin/</code> and the 404 page are intentionally excluded.</p>
+
+  <h3>Mobile layout</h3>
+  <div class="shots-pair">
+    <figure class="shot desk">
+      <img src="screenshots/home.png" alt="Home page desktop layout">
+      <figcaption><b>Figure 2.</b> Desktop layout. The navigation collapses below the large breakpoint.</figcaption>
+    </figure>
+    <figure class="shot phone">
+      <img src="screenshots/home-mobile.png" alt="Home page at 375 pixel width">
+      <figcaption><b>Figure 3.</b> Phone layout at 375 px, with a menu button.</figcaption>
+    </figure>
+  </div>
+
+  <h2 data-toc="Browsing the public pages">Browsing the public pages</h2>
+  <p>All public pages share the same header, footer and theme control. The header links to About, Education, Projects, Skills, Experience, Achievements, Resume and AirShare, with a “Let's talk” button to the contact page. On narrow screens the links move into a menu panel.</p>
+
+  <h3>Home</h3>
+  <p>The home page opens with the name, the current programme (B.Tech Computer Science and Engineering at CGEC), an animated role line and a portrait. It then presents four focus areas — software development, web development, cybersecurity and artificial intelligence — followed by three leadership cards: E-Cell CGEC, Tech-O-Nicks and the Smart India Hackathon 2026 organising team. The closing panel invites enquiries by email or through the contact form.</p>
+
+  <h3>About</h3>
+  <figure class="shot">
+    <img src="screenshots/about.png" alt="About page">
+    <figcaption><b>Figure 4.</b> The About page combines the biography, a chronological journey and a “short version” summary.</figcaption>
+  </figure>
+  <p>The About page explains the background, how the interest in building software developed, and the principles behind the work. The journey timeline starts with school and ends with the current student roles. The “short version” panel links to education, skills and leadership.</p>
+
+  <h3>Education</h3>
+  <figure class="shot">
+    <img src="screenshots/education.png" alt="Education page">
+    <figcaption><b>Figure 5.</b> Education records: the current B.Tech and the two school certificates.</figcaption>
+  </figure>
+  <p>Three records are published: the B.Tech in Computer Science and Engineering at Cooch Behar Government Engineering College, Higher Secondary at Delhi Public School Siliguri, and Secondary at the same school. Each record shows the period, board or university where applicable, and the published score.</p>
+
+  <h3>Skills</h3>
+  <figure class="shot">
+    <img src="screenshots/skills.png" alt="Skills page">
+    <figcaption><b>Figure 6.</b> Skills are grouped into three cards, each with a short description and a list.</figcaption>
+  </figure>
+  <p>The skills page groups technologies by area rather than by proficiency percentage. It is a plain statement of the tools and topics the owner works with.</p>
+
+  <h3>Projects</h3>
+  <figure class="shot">
+    <img src="screenshots/projects.png" alt="Projects page">
+    <figcaption><b>Figure 7.</b> Three projects, each with status, summary, stack and optional links.</figcaption>
+  </figure>
+  <p>Each card shows a status (<i>In development</i>, <i>Completed</i> or <i>Shipped</i>), a summary, a longer detail paragraph, the stack and any links. Project screenshots are not part of the current content model; the cards are text-only by design.</p>
+
+  <h3>Experience</h3>
+  <figure class="shot">
+    <img src="screenshots/experience.png" alt="Experience page">
+    <figcaption><b>Figure 8.</b> Leadership roles are presented as a timeline with responsibilities.</figcaption>
+  </figure>
+  <p>The experience page lists the five published leadership roles: Joint Secretary of the Entrepreneurship Cell, Joint Secretary of the Institution's Innovation Council, In-Charge of Tech-O-Nicks, Overall Coordinator of the institutional Smart India Hackathon 2026 round, and Reporter and Social Media Handler at CGEC Times.</p>
+
+  <h3>Achievements</h3>
+  <figure class="shot">
+    <img src="screenshots/achievements.png" alt="Achievements page">
+    <figcaption><b>Figure 9.</b> Leadership records, five awards and one certification with a certificate PDF.</figcaption>
+  </figure>
+  <p>This page separates leadership and event-organising records from awards. Awards include Esperanza 2025 (Robosoccer and Robosumo, winner), ByteBurst Hackathon 2025 (runner-up), Smart India Hackathon 2024 and 2025 (participant) and the Ideathon at Inzio, IIIT Guwahati (participant). The NPTEL certification “Programming, Data Structures and Algorithms using Python” links to a certificate PDF stored in the repository.</p>
+
+  <h3>Resume</h3>
+  <figure class="shot">
+    <img src="screenshots/resume.png" alt="Resume page">
+    <figcaption><b>Figure 10.</b> The resume page reproduces the approved details and offers the PDF.</figcaption>
+  </figure>
+  <p>The resume page shows the summary, education, experience, projects and certifications in a print-friendly layout. The “Download PDF” action serves <code>/resume/rishav-prasad-resume.pdf</code> from the static bundle. The page only exposes a PDF when the content flag <code>approvedForPublish</code> is true; it is currently true for the repository file.</p>
+
+  <h3>Not found</h3>
+  <figure class="shot">
+    <img src="screenshots/not-found.png" alt="Custom 404 page">
+    <figcaption><b>Figure 11.</b> Unknown paths render the site's own 404 page, not a provider default.</figcaption>
+  </figure>
+  <p>The 404 page keeps the site header and footer and offers routes back to the main sections.</p>
+
+  <h2 data-toc="Contacting Rishav">Contacting Rishav</h2>
+  <p>The contact page offers two channels: a form stored in the site's database and a direct email link to <b>prasadrishav959@gmail.com</b>. No phone number is published.</p>
+
+  <figure class="shot">
+    <img src="screenshots/contact.png" alt="Contact page with message form">
+    <figcaption><b>Figure 12.</b> The contact form: name, email, subject, message and a Cloudflare Turnstile challenge.</figcaption>
+  </figure>
+
+  <h3>What the form accepts</h3>
+  <table class="compact">
+    <thead><tr><th>Field</th><th>Rule</th><th>Required</th></tr></thead>
+    <tbody>
+      <tr><td>Name</td><td>2 to 80 characters</td><td>Yes</td></tr>
+      <tr><td>Email</td><td>Valid address, up to 160 characters</td><td>Yes</td></tr>
+      <tr><td>Subject</td><td>Up to 120 characters</td><td>No</td></tr>
+      <tr><td>Message</td><td>10 to 4000 characters</td><td>Yes</td></tr>
+      <tr><td>Verification</td><td>Cloudflare Turnstile token</td><td>Yes</td></tr>
+    </tbody>
+  </table>
+
+  <h3>What happens after sending</h3>
+  <ol class="steps">
+    <li>The browser sends the fields and the Turnstile token to <code>POST /api/contact</code>.</li>
+    <li>The Worker verifies the token with Cloudflare, rejects honeypot submissions silently, and validates every field.</li>
+    <li>A per-connection limit of five messages per hour is applied using a hash of the visitor's IP address; no raw IP is stored.</li>
+    <li>The message is stored in the D1 table <code>contact_messages</code> and appears in the owner's dashboard.</li>
+    <li>The visitor sees a confirmation. The owner sees the message the next time the Messages tab is opened.</li>
+  </ol>
+  <p>A public submission was successfully stored on 31 October 2026, confirming the live path works. The sender's details are not reproduced in this documentation.</p>
+
+  <div class="note"><b>Note.</b> If the form says “The contact form is not configured yet”, the Turnstile secret is missing on the Worker. Use the email link until the secret is set.</div>
+
+  <h2 data-toc="AirShare: local file transfer">AirShare: local file transfer</h2>
+  <p>AirShare sends files and short messages directly between two browsers on the same Wi-Fi. File bytes travel over WebRTC from browser to browser; the server only stores presence and connection metadata for a short time.</p>
+
+  <figure class="shot">
+    <img src="screenshots/airshare-guide.png" alt="AirShare guide page">
+    <figcaption><b>Figure 13.</b> The guide explains the same-network requirement, the PIN model and the transfer steps.</figcaption>
+  </figure>
+
+  <h3>Using AirShare</h3>
+  <ol class="steps">
+    <li>Connect both devices to the same Wi-Fi network. Guest networks that isolate clients will not work.</li>
+    <li>On the first device, open <code>rishavprasad.in/airshare/app/</code>, enter a device name and choose <b>Create a room</b>. AirShare generates a random 8-digit PIN.</li>
+    <li>On the second device, open the same page, enter a device name and the PIN, then choose <b>Join room</b>.</li>
+    <li>Wait until both devices show <b>Connected on this Wi-Fi</b>.</li>
+    <li>Choose a file (up to 100 MB) or type a message, then send it to the other device.</li>
+    <li>Keep both tabs open until the transfer completes. Use <b>Leave room</b> when finished.</li>
+  </ol>
+
+  <div class="shots-pair">
+    <figure class="shot desk">
+      <img src="screenshots/airshare-app.png" alt="AirShare app on desktop">
+      <figcaption><b>Figure 14.</b> The AirShare app before joining: name, PIN entry and the two entry modes.</figcaption>
+    </figure>
+    <figure class="shot phone">
+      <img src="screenshots/airshare-app-mobile.png" alt="AirShare app on a phone">
+      <figcaption><b>Figure 15.</b> The same app at phone width.</figcaption>
+    </figure>
+  </div>
+
+  <h3>Limits and behaviour</h3>
+  <table class="compact">
+    <thead><tr><th>Item</th><th>Limit</th></tr></thead>
+    <tbody>
+      <tr><td>PIN</td><td>6 to 10 digits; the app creates 8-digit PINs</td></tr>
+      <tr><td>Devices per room</td><td>8 simultaneous peers</td></tr>
+      <tr><td>File size</td><td>100 MB per file, sent in 64 KB chunks</td></tr>
+      <tr><td>Room lifetime</td><td>A peer disappears after 90 seconds without a heartbeat</td></tr>
+      <tr><td>Join limit</td><td>30 join attempts per 10 minutes per connection</td></tr>
+      <tr><td>Signalling</td><td>120 signals per minute per device; 64 KB per signal</td></tr>
+    </tbody>
+  </table>
+  <p>AirShare deliberately has no STUN or TURN server and no relay. That is what keeps transfers local, but it also means some networks will refuse a direct connection. When that happens the app stops the connection and explains that a local connection could not be confirmed. This is a design limit, not a missing feature.</p>
+
+  <div class="warn"><b>Warning.</b> Anyone who knows the PIN can join the room while it is open. Share the PIN only with the person receiving the file, and leave the room when the transfer is done.</div>
+
+  <h2 data-toc="The admin dashboard">The admin dashboard</h2>
+  <p>The dashboard at <code>/admin/</code> is the owner's private editor for site content and the inbox for contact messages. It is excluded from the sitemap, marked <code>noindex</code>, and disallowed in <code>robots.txt</code>. Access still depends on the password, not on obscurity.</p>
+
+  <figure class="shot">
+    <img src="screenshots/admin-login.png" alt="Admin sign-in screen">
+    <figcaption><b>Figure 16.</b> The sign-in screen. The signed-in dashboard is not reproduced here because it requires the owner's password.</figcaption>
+  </figure>
+
+  <h3>Signing in</h3>
+  <ol class="steps">
+    <li>Open <code>rishavprasad.in/admin/</code>.</li>
+    <li>Enter the admin password and choose <b>Sign in</b>.</li>
+    <li>The Worker checks the password against a PBKDF2-SHA256 hash (100,000 iterations) and sets an HttpOnly, SameSite=Strict session cookie.</li>
+    <li>The session lasts 12 hours. Choose <b>Sign out</b> when finished, especially on a shared computer.</li>
+  </ol>
+  <p>Wrong passwords are rate limited: eight failed attempts per 15 minutes per connection. A successful sign-in clears stale attempt records.</p>
+
+  <div class="warn"><b>Important.</b> The admin password and the secrets behind it are not included in this package. The owner supplies <code>ADMIN_PASSWORD_HASH</code> and <code>GITHUB_TOKEN</code>; the hash is generated locally with <code>node scripts/hash-password.mjs</code> and installed with <code>wrangler secret put</code>. Never commit a password or paste it into a command that might fail mid-pipe.</div>
+
+  <h3>What each tab edits</h3>
+  <table class="compact">
+    <thead><tr><th>Tab</th><th>Contents</th></tr></thead>
+    <tbody>
+      <tr><td>Profile</td><td>Resume summary, focus domains, social profiles, factual details.</td></tr>
+      <tr><td>Education</td><td>Degrees, institutions, boards, scores and notes.</td></tr>
+      <tr><td>Skills</td><td>Skill groups with an icon, description and item list.</td></tr>
+      <tr><td>Experience</td><td>Leadership roles, periods, summaries and bullet points.</td></tr>
+      <tr><td>Projects</td><td>Title, slug, status, summary, detail, stack and links.</td></tr>
+      <tr><td>Achievements</td><td>Leadership records, awards and certifications.</td></tr>
+      <tr><td>Resume</td><td>Approval flag and the current PDF link; replacement upload is hidden while R2 is disabled.</td></tr>
+      <tr><td>Messages</td><td>The last 100 contact messages; mark as read or delete.</td></tr>
+      <tr><td>Media</td><td>Image library in R2; currently unavailable because no bucket is bound.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Editing and publishing</h3>
+  <ol class="steps">
+    <li>Edit fields in one or more tabs. Changes stay in the browser until saved.</li>
+    <li>Choose <b>Save changes</b> to write the whole document to D1. The API validates every field, allow-list and length limit before writing; a rejected document returns the list of problems and nothing is stored.</li>
+    <li>Choose <b>Publish</b> to ask GitHub to rebuild the static site. The Worker sends a <code>content-published</code> repository dispatch using the stored GitHub token.</li>
+    <li>Wait for the GitHub Actions run to finish. The public pages change only after that rebuild completes; this is usually a few minutes.</li>
+  </ol>
+  <p>If the dashboard says “Publishing is not configured”, the GitHub token or repository variable is missing. If it says the rebuild request was rejected, the token has expired or lost permission to dispatch workflows.</p>
+
+  <div class="note"><b>Why two steps?</b> D1 is the source of truth for edits; the website is a static build. Saving alone does not change the public pages, and publishing without saving rebuilds the previous content. Always save first, then publish.</div>
+
+  <h3>Messages and media</h3>
+  <p>The Messages tab lists stored contact messages newest first, with an unread flag. Opening a message marks it read; deleting removes the row permanently. The Media tab and the resume upload require an R2 bucket binding that is currently commented out in <code>wrangler.jsonc</code>, so both show a configuration notice instead of an upload control. The resume PDF that the site serves lives in the repository at <code>public/resume/rishav-prasad-resume.pdf</code>.</p>
+
+  <h3>Session and error states</h3>
+  <table class="compact">
+    <thead><tr><th>Message</th><th>Meaning</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td>Admin login is not configured yet</td><td><code>ADMIN_PASSWORD_HASH</code> or <code>SESSION_SECRET</code> is missing.</td><td>Set both as Worker secrets.</td></tr>
+      <tr><td>Invalid credentials</td><td>Wrong password.</td><td>Retry; after eight failures wait 15 minutes.</td></tr>
+      <tr><td>Too many attempts</td><td>Login rate limit reached.</td><td>Wait, then sign in.</td></tr>
+      <tr><td>Your session expired</td><td>The 12-hour cookie expired or the secret changed.</td><td>Sign in again; unsaved edits are lost.</td></tr>
+      <tr><td>Stored content could not be read</td><td>D1 returned invalid content; the editor refuses to overwrite it.</td><td>Restore from backup before saving (see document 05).</td></tr>
+    </tbody>
+  </table>
+
+  <h2 data-toc="Appearance and accessibility">Appearance and accessibility</h2>
+  <p>The site ships a light and a dark theme built from the same “Summer Dream” palette. The theme follows the operating system on first visit, then remembers the visitor's choice in <code>localStorage</code> under the key <code>theme</code>. A toggle in the header switches modes without a page reload.</p>
+
+  <figure class="shot">
+    <img src="screenshots/home-dark.png" alt="Home page in dark mode">
+    <figcaption><b>Figure 17.</b> The dark theme uses the same accents on a deep teal background.</figcaption>
+  </figure>
+
+  <h3>Accessibility measures</h3>
+  <ul>
+    <li>A “Skip to content” link is the first focusable element.</li>
+    <li>The navigation toggle exposes its state, and the mobile menu is keyboard operable.</li>
+    <li>Every form control has a visible label; the contact form uses native validation hints.</li>
+    <li>Images carry alternative text, and decorative elements are hidden from assistive technology.</li>
+    <li>Focus outlines are preserved and contrast is designed for both themes.</li>
+    <li>The admin editor labels its inputs with real <code>label</code> elements, including dynamically generated lists.</li>
+  </ul>
+
+  <h3>Tested widths and browsers</h3>
+  <p>Automated checks cover 320, 375, 425, 768, 1024, 1440 and 1920 px across all eleven public routes. Mobile Safari on a physical phone has not been re-run in this engagement; the layout was verified in Chromium-based automation. AirShare needs WebRTC, which current Chrome, Edge, Firefox and Safari provide.</p>
+
+  <h2 data-toc="Troubleshooting">Troubleshooting</h2>
+  <table class="compact">
+    <thead><tr><th>Symptom</th><th>Likely cause</th><th>What to do</th></tr></thead>
+    <tbody>
+      <tr><td>Contact form says verification failed</td><td>The Turnstile challenge expired or the widget did not load.</td><td>Reload the page, complete the challenge again, or use the email link.</td></tr>
+      <tr><td>“Too many messages from this connection”</td><td>Five submissions in one hour from the same network.</td><td>Wait, or send email directly.</td></tr>
+      <tr><td>AirShare never shows “Connected”</td><td>Guest Wi-Fi isolation, different networks, or a network that blocks direct peer connections.</td><td>Use the same non-isolated Wi-Fi; retry; if it still fails, use a cable or a local transfer tool.</td></tr>
+      <tr><td>“AirShare stopped this connection because the two devices did not appear to share a local network”</td><td>WebRTC selected a public or relay-like path, which AirShare rejects on purpose.</td><td>Reconnect both devices to the same router and retry.</td></tr>
+      <tr><td>Admin sign-in says “Something went wrong”</td><td>An unexpected server error, often a missing secret or a database problem.</td><td>Check <code>/api/health</code>; if the database is unavailable, consult document 05.</td></tr>
+      <tr><td>Saved changes do not appear on the site</td><td>Publish was not run, or the rebuild is still queued.</td><td>Open the GitHub Actions run, confirm success, then reload with a hard refresh.</td></tr>
+      <tr><td>Resume download returns 404</td><td>The approved file path is wrong or the build has not run since the file changed.</td><td>Restore <code>public/resume/rishav-prasad-resume.pdf</code> and redeploy.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 data-toc="Privacy and data">Privacy and data</h2>
+  <p>The public site sets no advertising or tracking cookies. Cloudflare Web Analytics is enabled at the zone level; it is cookieless and aggregates page views. The only first-party storage in the browser is the theme preference. AirShare keeps a device name in <code>localStorage</code> so the field is prefilled.</p>
+  <p>Contact messages contain the name, email, optional subject and message text supplied by the sender, plus a salted hash of the connection IP for rate limiting. Messages are visible only in the authenticated dashboard. AirShare rooms store a device name, a peer identifier, a hashed room identifier and short-lived WebRTC signalling payloads; file contents never reach the server. Peer and signal rows are pruned automatically.</p>
+
+  <h2 data-toc="Glossary">Glossary</h2>
+  <dl class="kv">
+    <dt>D1</dt><dd>Cloudflare's SQLite-based database used for content, messages and AirShare signalling.</dd>
+    <dt>Worker</dt><dd>The Cloudflare serverless function that serves <code>/api/*</code> and <code>/media/*</code> and falls back to static assets.</dd>
+    <dt>Static export</dt><dd>The pre-rendered HTML, CSS and JavaScript written to <code>out/</code> by <code>next build</code>.</dd>
+    <dt>Turnstile</dt><dd>Cloudflare's CAPTCHA alternative used to protect the contact form.</dd>
+    <dt>PBKDF2</dt><dd>The password hashing function used for admin sign-in; Workers cap it at 100,000 iterations.</dd>
+    <dt>Repository dispatch</dt><dd>A GitHub API event that starts the rebuild workflow after a publish action.</dd>
+    <dt>R2</dt><dd>Cloudflare object storage. It is optional here and currently not enabled.</dd>
+    <dt>WebRTC</dt><dd>The browser API that carries AirShare files directly between devices.</dd>
+  </dl>
+
+</main>
+</body>
+</html>
