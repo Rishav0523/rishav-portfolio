@@ -29,9 +29,9 @@ access the admin area without permission.
 - API responses send `X-Content-Type-Options: nosniff` and `Referrer-Policy: no-referrer`.
 - Static pages send `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
   `Referrer-Policy: strict-origin-when-cross-origin`, a strict `Permissions-Policy`, and a
-  `Content-Security-Policy` that allows only same-origin resources plus the Turnstile origin
-  (`challenges.cloudflare.com`). Inline scripts and styles are permitted because the Next.js
-  static export and the CSP-compatible build rely on them.
+  `Content-Security-Policy` that allows only same-origin resources plus the Turnstile and Cloudflare
+  Web Analytics origins. Inline scripts and styles are permitted because the Next.js static export
+  and the CSP-compatible build rely on them.
 - Cookies are `HttpOnly`, `SameSite=Strict`, `Secure` on HTTPS, scoped to `/`.
 - Static pages are generated HTML; there is no server-side rendering of user input and no inline
   script injection point. Content is rendered with React escaping.
